@@ -1,41 +1,5 @@
 #pragma once
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
-#include <iostream>
-#include <stdexcept>
-#include <cstdlib>
-#include <vector>
-
-constexpr uint32_t WIDTH = 800;
-constexpr uint32_t HEIGHT = 800;
-
-const std::vector<const char*> validationLayers = {
-    "VK_LAYER_KHRONOS_validation"
-};
-
-#ifndef NDEBUG
-    constexpr bool enableValidationLayers = true;
-#else
-    constexpr bool enableValidationLayers = false;
-#endif // !NDEBUG
-
-inline VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
-    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-    if (func != nullptr) {
-        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
-    }
-    else {
-        return VK_ERROR_EXTENSION_NOT_PRESENT;
-    }
-}
-
-inline void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
-    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-    if (func != nullptr) {
-        func(instance, debugMessenger, pAllocator);
-    }
-}
+#include "Structures.h"
 
 class HelloTriangleApp {
 public:
@@ -43,30 +7,61 @@ public:
 
 private:
     GLFWwindow* window = nullptr;
-    VkInstance instance;
+    
     VkDebugUtilsMessengerEXT debugMessenger;
+
+    VkInstance instance;
+
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    VkDevice device;
+    VkQueue graphicsQueue;
+    VkQueue presentQueue;
+
+    VkSurfaceKHR surface;
+    VkSwapchainKHR swapchain;
+
+    std::vector<VkImage> swapchainImages;
+    VkFormat swapchainImageFormat;
+    VkExtent2D swapchainExtent;
 
 private:
-    void initWindow();
-
     void populateDebugUtilsMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
-    // initialisation
+    void mainLoop();
+    void cleanup();
+
+    // INITIALISATION
+    // glfw
+
+    void initWindow();
+
+    // vulkan
+
     void createInstance();
     void setupDebugMessenger();
+    void createSurface();
     void pickPhysicalDevice();
+    void createLogicalDevice();
+    void createSwapchain();
 
     void initVulkan();
 
-    void mainLoop();
-
-    void cleanup();
 
     std::vector<const char*> getRequiredExtensions() const;
+    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) const;
+    SwapchainSupportDetails querySwapchainSupport(VkPhysicalDevice device) const;
+
+    // CHOOSING SWAPCHAIN PARAMETERS
+
+    VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) const;
+    VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const;
+    VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) const;
+
+    // VALIDATING VULKAN REQUIREMENTS
 
     bool checkSupported(const std::vector<const char*> extensions) const;
     bool checkValidationLayerSupport() const;
+    bool checkDeviceExtensionSupport(VkPhysicalDevice device) const;
     bool checkDeviceSuitable(VkPhysicalDevice device) const;
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
