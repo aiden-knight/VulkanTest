@@ -20,6 +20,7 @@ private:
     VkSurfaceKHR surface;
     VkSwapchainKHR swapchain;
 
+    std::vector<VkImageView> swapchainImageViews;
     std::vector<VkImage> swapchainImages;
     VkFormat swapchainImageFormat;
     VkExtent2D swapchainExtent;
@@ -43,6 +44,8 @@ private:
     void pickPhysicalDevice();
     void createLogicalDevice();
     void createSwapchain();
+    void createImageViews();
+    void createGraphicsPipeline();
 
     void initVulkan();
 
