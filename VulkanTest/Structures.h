@@ -10,6 +10,7 @@
 #include <optional>
 #include <limits>
 #include <algorithm>
+#include <fstream>
 
 constexpr uint32_t WIDTH = 800;
 constexpr uint32_t HEIGHT = 800;

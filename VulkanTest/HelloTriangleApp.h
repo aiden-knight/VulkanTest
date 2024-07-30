@@ -53,6 +53,7 @@ private:
     std::vector<const char*> getRequiredExtensions() const;
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) const;
     SwapchainSupportDetails querySwapchainSupport(VkPhysicalDevice device) const;
+    VkShaderModule createShaderModule(const std::vector<char>& code) const;
 
     // CHOOSING SWAPCHAIN PARAMETERS
 
@@ -72,4 +73,6 @@ private:
         VkDebugUtilsMessageTypeFlagsEXT messageType,
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
         void* pUserData);
+
+    static std::vector<char> readFile(const std::string& filename);
 };

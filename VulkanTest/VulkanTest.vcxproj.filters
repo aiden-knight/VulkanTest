@@ -40,5 +40,8 @@
     <None Include="shaders\shader.frag">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="shaders\compile_shaders.bat">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

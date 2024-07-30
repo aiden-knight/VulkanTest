@@ -143,6 +143,7 @@
     <ClInclude Include="Structures.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="shaders\compile_shaders.bat" />
     <None Include="shaders\shader.frag" />
     <None Include="shaders\shader.vert" />
   </ItemGroup>
