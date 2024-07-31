@@ -19,13 +19,40 @@ private:
 
     VkSurfaceKHR surface;
     VkSwapchainKHR swapchain;
+    VkRenderPass renderPass;
+    VkPipelineLayout pipelineLayout;
+    VkPipeline graphicsPipeline;
 
-    std::vector<VkImageView> swapchainImageViews;
     std::vector<VkImage> swapchainImages;
+    std::vector<VkImageView> swapchainImageViews;
+    std::vector<VkFramebuffer> swapchainFramebuffers;
     VkFormat swapchainImageFormat;
     VkExtent2D swapchainExtent;
 
+    VkCommandPool commandPool;
+    
+    bool frameBufferResized = false;
+    uint32_t currentFrame = 0;
+    std::vector<VkCommandBuffer> commandBuffers;
+
+    std::vector<VkSemaphore> imageAvailableSemaphores;
+    std::vector<VkSemaphore> renderFinishedSemaphores;
+    std::vector<VkFence> inFlightFences;
+
 private:
+    // RENDERING
+    
+    /// <summary>
+    /// Writes the graphics queue commands we wanted to execute to the command buffer
+    /// </summary>
+    /// <param name="commandBuffer">The command buffer to write to</param>
+    /// <param name="imageIndex">Index of the swapchain image to write to</param>
+    void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+    /// <summary>
+    /// Renders a frame than adds it to the present queue to be presented to screen
+    /// </summary>
+    void drawFrame();
+
     void populateDebugUtilsMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
     void mainLoop();
@@ -45,10 +72,17 @@ private:
     void createLogicalDevice();
     void createSwapchain();
     void createImageViews();
+    void createRenderPass();
     void createGraphicsPipeline();
+    void createFramebuffers();
+    void createCommandPool();
+    void createCommandBuffers();
+    void createSyncObjects();
 
     void initVulkan();
 
+    void cleanupSwapchain();
+    void recreateSwapchain();
 
     std::vector<const char*> getRequiredExtensions() const;
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) const;
@@ -73,6 +107,8 @@ private:
         VkDebugUtilsMessageTypeFlagsEXT messageType,
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
         void* pUserData);
+
+    static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
 
     static std::vector<char> readFile(const std::string& filename);
 };

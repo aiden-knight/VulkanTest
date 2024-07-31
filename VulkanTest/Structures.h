@@ -12,8 +12,10 @@
 #include <algorithm>
 #include <fstream>
 
-constexpr uint32_t WIDTH = 800;
-constexpr uint32_t HEIGHT = 800;
+constexpr uint32_t WIDTH = 400;
+constexpr uint32_t HEIGHT = 400;
+
+constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
 const std::vector<const char*> validationLayers = {
     "VK_LAYER_KHRONOS_validation"
