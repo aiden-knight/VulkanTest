@@ -2,7 +2,7 @@
 
 void HelloTriangleApp::run() {
     // glfw initialisation
-    initWindow();
+    initGLFW();
 
     // vulkan object's creation
     initVulkan();
@@ -14,7 +14,7 @@ void HelloTriangleApp::run() {
     cleanup();
 }
 
-void HelloTriangleApp::initWindow() {
+void HelloTriangleApp::initGLFW() {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // tells glfw it isn't being created for use with OpenGL
 
