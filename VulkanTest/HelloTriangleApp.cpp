@@ -684,7 +684,7 @@ void HelloTriangleApp::createBuffer(VkDeviceSize size, VkBufferUsageFlags flags,
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = size;
     bufferInfo.usage = flags;
-    bufferInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_CONCURRENT; // @TODO use memory barrier to release control of memory to transfer queue
     bufferInfo.queueFamilyIndexCount = 2;
     bufferInfo.pQueueFamilyIndices = queueIndices;
     
@@ -702,6 +702,8 @@ void HelloTriangleApp::createBuffer(VkDeviceSize size, VkBufferUsageFlags flags,
     allocInfo.allocationSize = memoryRequirements.size;
     allocInfo.memoryTypeIndex = findMemoryType(memoryRequirements.memoryTypeBits, properties);
 
+    // @TODO change to use offset as should split up a single allocation among many different objects 
+    // due to physical device's maxMemoryAllocationCount
     if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate vertex buffer memory");
     }
