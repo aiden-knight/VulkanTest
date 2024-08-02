@@ -2,14 +2,14 @@
 #include "Structures.h"
 
 class HelloTriangleApp {
-public: // PUBLIC FUNCTIONS
+public: //                         PUBLIC FUNCTIONS
 
     /// <summary>
     /// Initalises, runs, then cleans up the vulkan application
     /// </summary>
     void run();
 
-private: // PRIVATE VARIABLES
+private: //                         PRIVATE VARIABLES
 
     /// <summary>
     /// Pointer to the glfw window in use
@@ -139,7 +139,7 @@ private: // PRIVATE VARIABLES
     /// </summary>
     std::vector<VkFence> inFlightFences;
 
-private: // PRIVATE FUNCTIONS
+private: //                         PRIVATE FUNCTIONS
     
     /// <summary>
     /// Writes the graphics queue commands we wanted to execute to the command buffer
@@ -167,14 +167,14 @@ private: // PRIVATE FUNCTIONS
     /// </summary>
     void cleanup();
 
-    // INITIALISATION FUNCTIONS 
+    //                              INITIALISATION FUNCTIONS 
     
     /// <summary>
     /// Initialises the glfw window and sets up required glfw callbacks
     /// </summary>
     void initGLFW();
 
-    // vulkan
+    // vulkan initialisation functions for creating respective objects
 
     void createInstance();
     void setupDebugMessenger();
@@ -190,36 +190,102 @@ private: // PRIVATE FUNCTIONS
     void createCommandBuffers();
     void createSyncObjects();
 
+    /// <summary>
+    /// Calls all the relevant create functions
+    /// </summary>
     void initVulkan();
 
+    /// <summary>
+    /// Destroys all swapchain specific objects
+    /// </summary>
     void cleanupSwapchain();
+
+    /// <summary>
+    /// If window has resized, calls cleanupSwapchain() then creates new swapchain with new window size
+    /// </summary>
     void recreateSwapchain();
 
+    /// <summary>
+    /// Creates and returns a vector of extensions required for the vulkan instance
+    /// </summary>
     std::vector<const char*> getRequiredExtensions() const;
+
+    /// <summary>
+    /// Gets the indices of where the desired queues are on a physical device
+    /// </summary>
+    /// <param name="device">The GPU to look on</param>
+    /// <returns>A struct containing the indices or value that indicates they weren't found</returns>
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) const;
+
+    /// <summary>
+    /// Checks what capabilites, image formats, and present modes the GPU supports for swapchains
+    /// </summary>
+    /// <param name="device">GPU to check</param>
+    /// <returns>Struct containing info wanted</returns>
     SwapchainSupportDetails querySwapchainSupport(VkPhysicalDevice device) const;
+
+    /// <summary>
+    /// Creates a vulkan shader module from compiled binary code of the shader
+    /// </summary>
     VkShaderModule createShaderModule(const std::vector<char>& code) const;
 
-    // CHOOSING SWAPCHAIN PARAMETERS
+    //                              CHOOSING SWAPCHAIN PARAMETERS
 
+    /// <summary>
+    /// Chooses the best image format for the swapchain out of those available
+    /// </summary>
     VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) const;
+
+    /// <summary>
+    /// Chooses the best present mode for the swapchain out of those available
+    /// </summary>
     VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const;
+
+    /// <summary>
+    /// Calculates the swapchain extent that best fits framebuffer but still abides by capabilities
+    /// </summary>
     VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) const;
 
-    // VALIDATING VULKAN REQUIREMENTS
+    //                              VALIDATING VULKAN REQUIREMENTS
 
+    /// <summary>
+    /// Checks if required instance extensions are supported
+    /// </summary>
+    /// <param name="extensions">Required extensions</param>
     bool checkSupported(const std::vector<const char*> extensions) const;
+
+    /// <summary>
+    /// Checks if the validation layers are supported on the instance
+    /// </summary>
     bool checkValidationLayerSupport() const;
+
+    /// <summary>
+    /// Checks if the GPU supports the extensions required
+    /// </summary>
     bool checkDeviceExtensionSupport(VkPhysicalDevice device) const;
+
+    /// <summary>
+    /// Checks if the GPU has the required queue families, swapchain support, and extensions support
+    /// </summary>
     bool checkDeviceSuitable(VkPhysicalDevice device) const;
 
+    /// <summary>
+    /// vulkan debug callback for when validation layers are setup
+    /// </summary>
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
         VkDebugUtilsMessageTypeFlagsEXT messageType,
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
         void* pUserData);
 
+    /// <summary>
+    /// glfw callback for window resized or minimised
+    /// </summary>
     static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
 
+    /// <summary>
+    /// Reads binary in from a file
+    /// </summary>
+    /// <param name="filename">path of file to read from</param>
     static std::vector<char> readFile(const std::string& filename);
 };
