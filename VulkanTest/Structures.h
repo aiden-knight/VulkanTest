@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <fstream>
 #include <array>
+#include <cstring>
 
 constexpr uint32_t WIDTH = 400;
 constexpr uint32_t HEIGHT = 400;
@@ -55,10 +56,12 @@ inline void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMesse
 struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
     std::optional<uint32_t> presentFamily;
+    std::optional<uint32_t> transferFamilyOnly; // has transfer capabilities but not graphics
 
     bool isComplete() {
         return graphicsFamily.has_value()
-            && presentFamily.has_value();
+            && presentFamily.has_value()
+            && transferFamilyOnly.has_value();
     }
 };
 
@@ -99,4 +102,13 @@ struct Vertex {
 
         return attributeDesc;
     }
+};
+
+const std::vector<Vertex> vertices = {
+    {{ -0.5f, -0.5f},{1.0f, 0.0f, 0.0f}},
+    {{ 0.5f,  -0.5f},{0.0f, 1.0f, 0.0f}},
+    {{-0.5f,  0.5f},{0.0f, 0.0f, 1.0f}},
+    {{ 0.5f,  -0.5f},{0.0f, 1.0f, 0.0f}},
+    {{ 0.5f, 0.5f},{1.0f, 0.0f, 0.0f}},
+    {{-0.5f,  0.5f},{0.0f, 0.0f, 1.0f}}
 };

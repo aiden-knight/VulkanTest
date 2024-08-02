@@ -46,6 +46,8 @@ private: //                         PRIVATE VARIABLES
     /// </summary>
     VkQueue presentQueue;
 
+    VkQueue transferQueue;
+
     /// <summary>
     /// abstraction of the window surface to be rendered to, required for on-screen rendering
     /// </summary>
@@ -108,6 +110,11 @@ private: //                         PRIVATE VARIABLES
     /// Responsible for memory management and allocation of command buffers
     /// </summary>
     VkCommandPool commandPool;
+
+    /// <summary>
+    /// Responsible for temporary transfer command buffers
+    /// </summary>
+    VkCommandPool transferCommandPool;
     
     /// <summary>
     /// Whether the window, thus framebuffer, has been resized
@@ -138,6 +145,9 @@ private: //                         PRIVATE VARIABLES
     /// Fence to ensure GPU has finished with the command buffer before the CPU tries to re-use it
     /// </summary>
     std::vector<VkFence> inFlightFences;
+
+    VkBuffer vertexBuffer;
+    VkDeviceMemory vertexBufferMemory;
 
 private: //                         PRIVATE FUNCTIONS
     
@@ -187,6 +197,7 @@ private: //                         PRIVATE FUNCTIONS
     void createGraphicsPipeline();
     void createFramebuffers();
     void createCommandPool();
+    void createVertexBuffer();
     void createCommandBuffers();
     void createSyncObjects();
 
@@ -194,6 +205,9 @@ private: //                         PRIVATE FUNCTIONS
     /// Calls all the relevant create functions
     /// </summary>
     void initVulkan();
+
+    void createBuffer(VkDeviceSize size, VkBufferUsageFlags flags, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+    void copyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size);
 
     /// <summary>
     /// Destroys all swapchain specific objects
@@ -228,6 +242,8 @@ private: //                         PRIVATE FUNCTIONS
     /// Creates a vulkan shader module from compiled binary code of the shader
     /// </summary>
     VkShaderModule createShaderModule(const std::vector<char>& code) const;
+
+    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
     //                              CHOOSING SWAPCHAIN PARAMETERS
 
