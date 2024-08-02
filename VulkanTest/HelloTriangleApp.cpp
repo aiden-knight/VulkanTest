@@ -829,18 +829,14 @@ VkExtent2D HelloTriangleApp::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& ca
 }
 
 bool HelloTriangleApp::checkSupported(const std::vector<const char*> extensions) const {
-    // get supported extensions
+    // get supported instance extensions
     uint32_t supportedExtensionCount = 0;
     vkEnumerateInstanceExtensionProperties(nullptr, &supportedExtensionCount, nullptr);
 
     std::vector<VkExtensionProperties> supportedExtensions(supportedExtensionCount);
     vkEnumerateInstanceExtensionProperties(nullptr, &supportedExtensionCount, supportedExtensions.data());
 
-    std::cout << "available extensions:\n";
-    for (const auto& extension : supportedExtensions) {
-        std::cout << '\t' << extension.extensionName << '\n';
-    }
-
+    // loop over wanted extensions to check if they are available
     for (const char* wanted : extensions) {
         auto isInVector = [wanted](const VkExtensionProperties& prop) { return strcmp(prop.extensionName, wanted) == 0; };
         if (std::find_if(supportedExtensions.begin(), supportedExtensions.end(), isInVector) == supportedExtensions.end()) {
