@@ -84,6 +84,11 @@ private: //                         PRIVATE VARIABLES
     /// how the contents of the buffer should be handled during rendering
     /// </summary>
     VkRenderPass renderPass;
+    
+    /// <summary>
+    /// Describes layout of things to be passed to the shader
+    /// </summary>
+    VkDescriptorSetLayout descriptorSetLayout;
 
     /// <summary>
     /// Describes the uniform values to pass to shaders
@@ -146,8 +151,18 @@ private: //                         PRIVATE VARIABLES
     /// </summary>
     std::vector<VkFence> inFlightFences;
 
+    // can use same buffer for both indices and vertices
     VkBuffer vertexBuffer;
     VkDeviceMemory vertexBufferMemory;
+    VkBuffer indexBuffer;
+    VkDeviceMemory indexBufferMemory;
+    
+    VkDescriptorPool descriptorPool;
+    std::vector<VkDescriptorSet> descriptorSets;
+
+    std::vector<VkBuffer> uniformBuffers;
+    std::vector<VkDeviceMemory> uniformBuffersMemory;
+    std::vector<void*> uniformBuffersMapped;
 
 private: //                         PRIVATE FUNCTIONS
     
@@ -161,6 +176,8 @@ private: //                         PRIVATE FUNCTIONS
     /// Renders a frame than adds it to the present queue to be presented to screen
     /// </summary>
     void drawFrame();
+
+    void updateUniformBuffer(uint32_t currentImage);
 
     /// <summary>
     /// For re-use, fills in the messenger create info for sending debug messages to the same callback
@@ -194,10 +211,15 @@ private: //                         PRIVATE FUNCTIONS
     void createSwapchain();
     void createImageViews();
     void createRenderPass();
+    void createDescriptorSetLayout();
     void createGraphicsPipeline();
     void createFramebuffers();
     void createCommandPool();
     void createVertexBuffer();
+    void createIndexBuffer();
+    void createUniformBuffers();
+    void createDescriptorPool();
+    void createDescriptorSets();
     void createCommandBuffers();
     void createSyncObjects();
 
@@ -207,7 +229,7 @@ private: //                         PRIVATE FUNCTIONS
     void initVulkan();
 
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags flags, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
-    void copyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size);
+    void copyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size) const;
 
     /// <summary>
     /// Destroys all swapchain specific objects

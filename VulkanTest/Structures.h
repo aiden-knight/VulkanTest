@@ -71,10 +71,13 @@ struct SwapchainSupportDetails {
     std::vector<VkPresentModeKHR> presentModes;
 };
 
+#define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <chrono>
 
 struct Vertex {
-    glm::vec2 pos;
+    glm::vec3 pos;
     glm::vec3 color;
 
     static VkVertexInputBindingDescription getBindingDescription() {
@@ -92,7 +95,7 @@ struct Vertex {
 
         attributeDesc[0].binding = 0;
         attributeDesc[0].location = 0;
-        attributeDesc[0].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDesc[0].format = VK_FORMAT_R32G32B32_SFLOAT;
         attributeDesc[0].offset = offsetof(Vertex, pos);
 
         attributeDesc[1].binding = 0;
@@ -104,11 +107,20 @@ struct Vertex {
     }
 };
 
+struct UniformBufferObject {
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 proj;
+};
+
 const std::vector<Vertex> vertices = {
-    {{ -0.5f, -0.5f},{1.0f, 0.0f, 0.0f}},
-    {{ 0.5f,  -0.5f},{0.0f, 1.0f, 0.0f}},
-    {{-0.5f,  0.5f},{0.0f, 0.0f, 1.0f}},
-    {{ 0.5f,  -0.5f},{0.0f, 1.0f, 0.0f}},
-    {{ 0.5f, 0.5f},{1.0f, 0.0f, 0.0f}},
-    {{-0.5f,  0.5f},{0.0f, 0.0f, 1.0f}}
+    {{ -0.5f, -0.5f, 0.0f},{1.0f, 0.0f, 0.0f}},
+    {{ 0.5f,  -0.5f, 0.0f},{0.0f, 1.0f, 0.0f}},
+    {{-0.5f,  0.5f, 0.0f},{0.0f, 0.0f, 1.0f}},
+    {{ 0.5f, 0.5f, 0.0f},{1.0f, 1.0f, 1.0f}}
+};
+
+const std::vector<uint16_t> indices = {
+    0, 1, 2, 
+    1, 3, 2
 };
