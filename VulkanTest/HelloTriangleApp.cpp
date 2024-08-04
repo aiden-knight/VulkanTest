@@ -640,6 +640,33 @@ void HelloTriangleApp::createCommandPool() {
     }
 }
 
+void HelloTriangleApp::createTextureImage() {
+    // load image
+    int texWidth, texHeight, numChannels;
+    stbi_uc* pixels = stbi_load("textures/texture.jpg", &texWidth, &texHeight, &numChannels, STBI_rgb_alpha);
+    VkDeviceSize size = texWidth * texHeight * 4;
+
+    if (!pixels) {
+        throw std::runtime_error("failed to load texture image");
+    }
+
+    // create a staging buffer with pixel data in
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+    createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, stagingBuffer, stagingBufferMemory);
+
+    void* data;
+    vkMapMemory(device, stagingBufferMemory, 0, size, 0, &data);
+    std::memcpy(data, pixels, static_cast<size_t>(size));
+    vkUnmapMemory(device, stagingBufferMemory);
+
+    stbi_image_free(pixels);
+
+    createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
+
+}
+
 void HelloTriangleApp::createVertexBuffer() {
     VkDeviceSize size = sizeof(vertices[0]) * vertices.size();
 
@@ -791,6 +818,7 @@ void HelloTriangleApp::initVulkan() {
     createGraphicsPipeline();
     createFramebuffers();
     createCommandPool();
+    createTextureImage();
     createVertexBuffer();
     createIndexBuffer();
     createUniformBuffers();
@@ -870,6 +898,43 @@ void HelloTriangleApp::copyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size)
     vkQueueWaitIdle(transferQueue); // use fence for multiple transfers
 
     vkFreeCommandBuffers(device, transferCommandPool, 1, &copyCmdBuffer);
+}
+
+void HelloTriangleApp::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, 
+    VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
+    // create vulkan image
+    VkImageCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    createInfo.imageType = VK_IMAGE_TYPE_2D;
+    createInfo.extent.width = width;
+    createInfo.extent.height = height;
+    createInfo.extent.depth = 1;
+    createInfo.mipLevels = 1;
+    createInfo.arrayLayers = 1;
+    createInfo.format = format;
+    createInfo.tiling = tiling;
+    createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    createInfo.usage = usage;
+    createInfo.sharingMode = VK_SHARING_MODE_CONCURRENT; // CHANGE TO EXCLUSIVE
+    createInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+
+    if (vkCreateImage(device, &createInfo, nullptr, &image) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create texture image");
+    }
+
+    VkMemoryRequirements memRequirements;
+    vkGetImageMemoryRequirements(device, image, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+
+    if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate image memory");
+    }
+
+    vkBindImageMemory(device, image, imageMemory, 0);
 }
 
 void HelloTriangleApp::cleanupSwapchain() {

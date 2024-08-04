@@ -156,6 +156,8 @@ private: //                         PRIVATE VARIABLES
     VkDeviceMemory vertexBufferMemory;
     VkBuffer indexBuffer;
     VkDeviceMemory indexBufferMemory;
+    VkImage textureImage;
+    VkDeviceMemory textureImageMemory;
     
     VkDescriptorPool descriptorPool;
     std::vector<VkDescriptorSet> descriptorSets;
@@ -202,12 +204,14 @@ private: //                         PRIVATE FUNCTIONS
     void initGLFW();
 
     // vulkan initialisation functions for creating respective objects
-
     void createInstance();
     void setupDebugMessenger();
     void createSurface();
+
+    // GPU interfacing
     void pickPhysicalDevice();
     void createLogicalDevice();
+
     void createSwapchain();
     void createImageViews();
     void createRenderPass();
@@ -215,9 +219,14 @@ private: //                         PRIVATE FUNCTIONS
     void createGraphicsPipeline();
     void createFramebuffers();
     void createCommandPool();
+
+    void createTextureImage();
+
+    // VkBuffer creation
     void createVertexBuffer();
     void createIndexBuffer();
     void createUniformBuffers();
+
     void createDescriptorPool();
     void createDescriptorSets();
     void createCommandBuffers();
@@ -230,6 +239,9 @@ private: //                         PRIVATE FUNCTIONS
 
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags flags, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     void copyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size) const;
+
+    void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
+        VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 
     /// <summary>
     /// Destroys all swapchain specific objects
