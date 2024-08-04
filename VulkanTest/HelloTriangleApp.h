@@ -157,8 +157,11 @@ private: //                         PRIVATE VARIABLES
     VkBuffer indexBuffer;
     VkDeviceMemory indexBufferMemory;
     VkImage textureImage;
+    VkImageView textureImageView;
     VkDeviceMemory textureImageMemory;
     
+    VkSampler textureSampler;
+
     VkDescriptorPool descriptorPool;
     std::vector<VkDescriptorSet> descriptorSets;
 
@@ -223,6 +226,8 @@ private: //                         PRIVATE FUNCTIONS
     void createCommandPool();
 
     void createTextureImage();
+    void createTextureImageView();
+    void createTextureSampler();
 
     // VkBuffer creation
     void createVertexBuffer();
@@ -244,6 +249,7 @@ private: //                         PRIVATE FUNCTIONS
 
     void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
         VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+    VkImageView createImageView(VkImage image, VkFormat format);
     void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
     void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
