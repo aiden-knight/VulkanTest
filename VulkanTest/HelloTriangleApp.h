@@ -166,6 +166,8 @@ private: //                         PRIVATE VARIABLES
     std::vector<VkDeviceMemory> uniformBuffersMemory;
     std::vector<void*> uniformBuffersMapped;
 
+    QueueFamilyIndices queueFamilyIndices;
+
 private: //                         PRIVATE FUNCTIONS
     
     /// <summary>

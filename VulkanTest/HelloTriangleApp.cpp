@@ -278,11 +278,11 @@ void HelloTriangleApp::pickPhysicalDevice() {
 }
 
 void HelloTriangleApp::createLogicalDevice() {
-    QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+    queueFamilyIndices = findQueueFamilies(physicalDevice);
 
     // DEVICE QUEUES
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-    std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value(), indices.transferFamilyOnly.value() };
+    std::set<uint32_t> uniqueQueueFamilies = { queueFamilyIndices.graphicsFamily.value(), queueFamilyIndices.presentFamily.value(), queueFamilyIndices.transferFamilyOnly.value() };
 
     float queuePriority = 1.0f;
     for (uint32_t queueFamily : uniqueQueueFamilies) {
@@ -323,9 +323,9 @@ void HelloTriangleApp::createLogicalDevice() {
     }
 
     // GET QUEUE HANDLES
-    vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
-    vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
-    vkGetDeviceQueue(device, indices.transferFamilyOnly.value(), 0, &transferQueue);
+    vkGetDeviceQueue(device, queueFamilyIndices.graphicsFamily.value(), 0, &graphicsQueue);
+    vkGetDeviceQueue(device, queueFamilyIndices.presentFamily.value(), 0, &presentQueue);
+    vkGetDeviceQueue(device, queueFamilyIndices.transferFamilyOnly.value(), 0, &transferQueue);
 }
 
 void HelloTriangleApp::createSwapchain() {
@@ -350,13 +350,12 @@ void HelloTriangleApp::createSwapchain() {
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
-    uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+    uint32_t queueFamilyIndicesArray[] = { queueFamilyIndices.graphicsFamily.value(), queueFamilyIndices.presentFamily.value() };
 
-    if (indices.graphicsFamily.value() != indices.presentFamily.value()) {
+    if (queueFamilyIndices.graphicsFamily.value() != queueFamilyIndices.presentFamily.value()) {
         createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
         createInfo.queueFamilyIndexCount = 2;
-        createInfo.pQueueFamilyIndices = queueFamilyIndices;
+        createInfo.pQueueFamilyIndices = queueFamilyIndicesArray;
     } else {
         createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
         createInfo.queueFamilyIndexCount = 0;
@@ -619,12 +618,10 @@ void HelloTriangleApp::createFramebuffers() {
 }
 
 void HelloTriangleApp::createCommandPool() {
-    QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
-
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    poolInfo.queueFamilyIndex = indices.graphicsFamily.value();
+    poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
     if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create command pool");
@@ -633,7 +630,7 @@ void HelloTriangleApp::createCommandPool() {
     VkCommandPoolCreateInfo transferPoolInfo{};
     transferPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     transferPoolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-    transferPoolInfo.queueFamilyIndex = indices.transferFamilyOnly.value();
+    transferPoolInfo.queueFamilyIndex = queueFamilyIndices.transferFamilyOnly.value();
 
     if (vkCreateCommandPool(device, &transferPoolInfo, nullptr, &transferCommandPool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create transfer command pool");
@@ -837,9 +834,7 @@ void HelloTriangleApp::initVulkan() {
 }
 
 void HelloTriangleApp::createBuffer(VkDeviceSize size, VkBufferUsageFlags flags, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
-    QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
-
-    uint32_t queueIndices[] = { indices.graphicsFamily.value() };
+    uint32_t queueIndices[] = { queueFamilyIndices.graphicsFamily.value() };
 
     // create vertex buffer
     VkBufferCreateInfo bufferInfo{};
@@ -884,12 +879,10 @@ void HelloTriangleApp::copyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size)
     vkCmdCopyBuffer(copyInfo.commandBuffer, src, dst, 1, &copyRegion);
 
     // setup barrier for queue transfer @TODO check queues are different
-    QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
-
     VkBufferMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-    barrier.srcQueueFamilyIndex = indices.transferFamilyOnly.value();
-    barrier.dstQueueFamilyIndex = indices.graphicsFamily.value();
+    barrier.srcQueueFamilyIndex = queueFamilyIndices.transferFamilyOnly.value();
+    barrier.dstQueueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
     barrier.buffer = dst;
     barrier.offset = 0;
     barrier.size = size;
@@ -1005,9 +998,8 @@ void HelloTriangleApp::transitionImageLayout(VkImage image, VkFormat format, VkI
         transferQueueOwnership = true;
 
         // queues to transfer ownership from
-        QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
-        barrier.srcQueueFamilyIndex = indices.transferFamilyOnly.value();
-        barrier.dstQueueFamilyIndex = indices.graphicsFamily.value();
+        barrier.srcQueueFamilyIndex = queueFamilyIndices.transferFamilyOnly.value();
+        barrier.dstQueueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
         // command pool that the queue belongs to
         dstQueueInfo.commandBuffer = beginSingleTimeCommands(dstQueueInfo.commandPool);
