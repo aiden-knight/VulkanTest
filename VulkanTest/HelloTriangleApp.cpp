@@ -662,9 +662,17 @@ void HelloTriangleApp::createTextureImage() {
 
     stbi_image_free(pixels);
 
-    createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+    VkFormat texFormat = VK_FORMAT_R8G8B8A8_SRGB;
+    createImage(texWidth, texHeight, texFormat, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
 
+    transitionImageLayout(textureImage, texFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    copyBufferToImage(stagingBuffer, textureImage, texWidth, texHeight);
+    transitionImageLayout(textureImage, texFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    // delete buffer and free memory, must be in this order
+    vkDestroyBuffer(device, stagingBuffer, nullptr);
+    vkFreeMemory(device, stagingBufferMemory, nullptr);
 }
 
 void HelloTriangleApp::createVertexBuffer() {
@@ -831,16 +839,14 @@ void HelloTriangleApp::initVulkan() {
 void HelloTriangleApp::createBuffer(VkDeviceSize size, VkBufferUsageFlags flags, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
     QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
-    uint32_t queueIndices[] = { indices.graphicsFamily.value(), indices.transferFamilyOnly.value() };
+    uint32_t queueIndices[] = { indices.graphicsFamily.value() };
 
     // create vertex buffer
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = size;
     bufferInfo.usage = flags;
-    bufferInfo.sharingMode = VK_SHARING_MODE_CONCURRENT; // @TODO use memory barrier to release control of memory to transfer queue
-    bufferInfo.queueFamilyIndexCount = 2;
-    bufferInfo.pQueueFamilyIndices = queueIndices;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
         throw std::runtime_error("failed to create vertex buffer");
@@ -866,38 +872,52 @@ void HelloTriangleApp::createBuffer(VkDeviceSize size, VkBufferUsageFlags flags,
 }
 
 void HelloTriangleApp::copyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size) const {
-    // create the temporary command buffer
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool = transferCommandPool;
-    allocInfo.commandBufferCount = 1;
-
-    VkCommandBuffer copyCmdBuffer;
-    vkAllocateCommandBuffers(device, &allocInfo, &copyCmdBuffer);
-
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-    vkBeginCommandBuffer(copyCmdBuffer, &beginInfo); // begin command
+    CommandBufferSubmitInfo copyInfo{
+        transferCommandPool,
+        transferQueue,
+        VK_NULL_HANDLE
+    };
+    copyInfo.commandBuffer = beginSingleTimeCommands(copyInfo.commandPool);
 
     VkBufferCopy copyRegion{};
     copyRegion.size = size;
-    vkCmdCopyBuffer(copyCmdBuffer, src, dst, 1, &copyRegion);
+    vkCmdCopyBuffer(copyInfo.commandBuffer, src, dst, 1, &copyRegion);
 
-    vkEndCommandBuffer(copyCmdBuffer);               // end command
+    // setup barrier for queue transfer @TODO check queues are different
+    QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
-    // submit commands
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &copyCmdBuffer;
-    
-    vkQueueSubmit(transferQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(transferQueue); // use fence for multiple transfers
+    VkBufferMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    barrier.srcQueueFamilyIndex = indices.transferFamilyOnly.value();
+    barrier.dstQueueFamilyIndex = indices.graphicsFamily.value();
+    barrier.buffer = dst;
+    barrier.offset = 0;
+    barrier.size = size;
 
-    vkFreeCommandBuffers(device, transferCommandPool, 1, &copyCmdBuffer);
+    barrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
+    barrier.dstAccessMask = 0;
+
+    vkCmdPipelineBarrier(copyInfo.commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
+        0, nullptr,
+        1, &barrier,
+        0, nullptr);
+
+    CommandBufferSubmitInfo dstQueueInfo{
+        commandPool,
+        graphicsQueue,
+        VK_NULL_HANDLE
+    };
+    dstQueueInfo.commandBuffer = beginSingleTimeCommands(dstQueueInfo.commandPool);
+
+    barrier.srcAccessMask = 0;
+    barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+
+    vkCmdPipelineBarrier(dstQueueInfo.commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0,
+        0, nullptr,
+        1, &barrier,
+        0, nullptr);
+
+    endSingleTimeCommandsQueueTransfer(copyInfo, dstQueueInfo, VK_PIPELINE_STAGE_TRANSFER_BIT);
 }
 
 void HelloTriangleApp::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, 
@@ -915,7 +935,7 @@ void HelloTriangleApp::createImage(uint32_t width, uint32_t height, VkFormat for
     createInfo.tiling = tiling;
     createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     createInfo.usage = usage;
-    createInfo.sharingMode = VK_SHARING_MODE_CONCURRENT; // CHANGE TO EXCLUSIVE
+    createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     createInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 
     if (vkCreateImage(device, &createInfo, nullptr, &image) != VK_SUCCESS) {
@@ -935,6 +955,178 @@ void HelloTriangleApp::createImage(uint32_t width, uint32_t height, VkFormat for
     }
 
     vkBindImageMemory(device, image, imageMemory, 0);
+}
+
+void HelloTriangleApp::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
+    CommandBufferSubmitInfo transferInfo = {
+        transferCommandPool,
+        transferQueue,
+        VK_NULL_HANDLE
+    };
+    transferInfo.commandBuffer = beginSingleTimeCommands(transferInfo.commandPool);
+
+    // information needed to transfer queue
+    CommandBufferSubmitInfo dstQueueInfo = {
+        commandPool,
+        graphicsQueue,
+        VK_NULL_HANDLE 
+    };
+
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = oldLayout;
+    barrier.newLayout = newLayout;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = image;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+
+    VkPipelineStageFlags sourceStage;
+    VkPipelineStageFlags destinationStage;
+    bool transferQueueOwnership = false;
+    if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+        sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        destinationStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT; // finished the transfer command
+        
+        // handle queue ownership transfer
+        transferQueueOwnership = true;
+
+        // queues to transfer ownership from
+        QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+        barrier.srcQueueFamilyIndex = indices.transferFamilyOnly.value();
+        barrier.dstQueueFamilyIndex = indices.graphicsFamily.value();
+
+        // command pool that the queue belongs to
+        dstQueueInfo.commandBuffer = beginSingleTimeCommands(dstQueueInfo.commandPool);
+
+    } else {
+        throw std::invalid_argument("unsupported layout transition!");
+    }
+
+    vkCmdPipelineBarrier(transferInfo.commandBuffer, sourceStage, destinationStage, 0,
+        0, nullptr,
+        0, nullptr, 
+        1, &barrier);
+
+    if (transferQueueOwnership) {
+        sourceStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        vkCmdPipelineBarrier(dstQueueInfo.commandBuffer, sourceStage, destinationStage, 0,
+        0, nullptr,
+        0, nullptr, 
+        1, &barrier);
+
+        endSingleTimeCommandsQueueTransfer(transferInfo, dstQueueInfo, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    } else {
+        endSingleTimeCommands(transferInfo);
+    }
+}
+
+void HelloTriangleApp::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
+    VkCommandBuffer copyCmdBuffer = beginSingleTimeCommands(transferCommandPool);
+
+    VkBufferImageCopy region{};
+    region.bufferOffset = 0;
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.mipLevel = 0;
+    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.layerCount = 1;
+
+    region.imageOffset = { 0, 0, 0 };
+    region.imageExtent = {
+        width,
+        height,
+        1
+    };
+
+    vkCmdCopyBufferToImage(copyCmdBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+    endSingleTimeCommands({ transferCommandPool, transferQueue, copyCmdBuffer });
+}
+
+VkCommandBuffer HelloTriangleApp::beginSingleTimeCommands(VkCommandPool commandPool) const {
+    // create the temporary command buffer
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool = commandPool;
+    allocInfo.commandBufferCount = 1;
+
+    VkCommandBuffer commandBuffer;
+    vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+    return commandBuffer;
+}
+
+void HelloTriangleApp::endSingleTimeCommands(CommandBufferSubmitInfo info) const {
+    vkEndCommandBuffer(info.commandBuffer);
+
+    // submit commands
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &info.commandBuffer;
+
+    vkQueueSubmit(info.queueHandle, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(info.queueHandle); // use fence for multiple transfers
+
+    vkFreeCommandBuffers(device, info.commandPool, 1, &info.commandBuffer);
+}
+
+void HelloTriangleApp::endSingleTimeCommandsQueueTransfer(CommandBufferSubmitInfo src, CommandBufferSubmitInfo dst, VkPipelineStageFlags flags) const {
+    vkEndCommandBuffer(src.commandBuffer);
+    vkEndCommandBuffer(dst.commandBuffer);
+
+    // create the semaphore so they wait in the correct places
+    VkSemaphore semaphore;
+    VkSemaphoreCreateInfo semaphoreInfo{};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &semaphore) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create semaphore");
+    }
+
+    // submit commands
+    VkSubmitInfo submitInfoSrc{}, submitInfoDst{};
+    submitInfoSrc.sType = submitInfoDst.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfoSrc.commandBufferCount = submitInfoDst.commandBufferCount = 1;
+    submitInfoSrc.pCommandBuffers = &src.commandBuffer;
+    submitInfoDst.pCommandBuffers = &dst.commandBuffer;
+
+    submitInfoSrc.signalSemaphoreCount = 1;
+    submitInfoSrc.pSignalSemaphores = &semaphore;
+
+    submitInfoDst.waitSemaphoreCount = 1;
+    submitInfoDst.pWaitSemaphores = &semaphore;
+    submitInfoDst.pWaitDstStageMask = &flags;
+
+    vkQueueSubmit(src.queueHandle, 1, &submitInfoSrc, VK_NULL_HANDLE);
+    vkQueueSubmit(dst.queueHandle, 1, &submitInfoDst, VK_NULL_HANDLE);
+    
+    vkQueueWaitIdle(dst.queueHandle); // use fence for multiple transfers
+    vkFreeCommandBuffers(device, src.commandPool, 1, &src.commandBuffer);
+    vkFreeCommandBuffers(device, dst.commandPool, 1, &dst.commandBuffer);
+    vkDestroySemaphore(device, semaphore, nullptr);
 }
 
 void HelloTriangleApp::cleanupSwapchain() {
@@ -990,6 +1182,8 @@ void HelloTriangleApp::cleanup() {
     vkFreeMemory(device, vertexBufferMemory, nullptr);
     vkDestroyBuffer(device, indexBuffer, nullptr);
     vkFreeMemory(device, indexBufferMemory, nullptr);
+    vkDestroyImage(device, textureImage, nullptr);
+    vkFreeMemory(device, textureImageMemory, nullptr);
 
     vkDestroyDescriptorPool(device, descriptorPool, nullptr);
     vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
