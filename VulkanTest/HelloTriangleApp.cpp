@@ -696,7 +696,7 @@ void HelloTriangleApp::createTextureImage() {
 
     transitionImageLayout(textureImage, texFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
     copyBufferToImage(stagingBuffer, textureImage, texWidth, texHeight);
-    transitionImageLayout(textureImage, texFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels);
+    generateMipmaps(textureImage, texFormat, texWidth, texHeight, mipLevels); // does transition to read only whilst generating mipmaps
 
     // delete buffer and free memory, must be in this order
     vkDestroyBuffer(device, stagingBuffer, nullptr);
@@ -727,7 +727,7 @@ void HelloTriangleApp::createTextureSampler() {
     createInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
     createInfo.mipLodBias = 0.0f;
     createInfo.minLod = 0.0f;
-    createInfo.maxLod = 0.0f;
+    createInfo.maxLod = static_cast<float>(mipLevels);
 
     if (vkCreateSampler(device, &createInfo, nullptr, &textureSampler) != VK_SUCCESS) {
         throw std::runtime_error("failed to create sampler");
@@ -1075,10 +1075,17 @@ void HelloTriangleApp::createImage(uint32_t width, uint32_t height, uint32_t mip
     vkBindImageMemory(device, image, imageMemory, 0);
 }
 
-void HelloTriangleApp::generateMipmaps(VkImage image, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) {
+void HelloTriangleApp::generateMipmaps(VkImage image, VkFormat format, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) {
+    VkFormatProperties formatProps{};
+    vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &formatProps);
+
+    if (!(formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
+        throw std::runtime_error("texture image format does not support linear blitting");
+    }
+
     CommandBufferSubmitInfo cmdBufferInfo = {
-        transferCommandPool,
-        transferQueue,
+        commandPool,
+        graphicsQueue,
         VK_NULL_HANDLE
     };
     cmdBufferInfo.commandBuffer = beginSingleTimeCommands(cmdBufferInfo.commandPool);
@@ -1096,8 +1103,64 @@ void HelloTriangleApp::generateMipmaps(VkImage image, int32_t texWidth, int32_t 
     int32_t mipWidth = texWidth;
     int32_t mipHeight = texHeight;
     for (uint32_t i = 1; i < mipLevels; i++) {
+        barrier.subresourceRange.baseMipLevel = i - 1;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 
+        vkCmdPipelineBarrier(cmdBufferInfo.commandBuffer,
+            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+            0, nullptr,
+            0, nullptr,
+            1, &barrier);
+
+        VkImageBlit blit{};
+        blit.srcOffsets[0] = { 0, 0, 0 };
+        blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
+        blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        blit.srcSubresource.mipLevel = i - 1;
+        blit.srcSubresource.baseArrayLayer = 0;
+        blit.srcSubresource.layerCount = 1;
+        blit.dstOffsets[0] = { 0, 0, 0 };
+        blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 }; // old width / height divided by 2 or 1
+        blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        blit.dstSubresource.mipLevel = i;
+        blit.dstSubresource.baseArrayLayer = 0;
+        blit.dstSubresource.layerCount = 1;
+
+        vkCmdBlitImage(cmdBufferInfo.commandBuffer,
+            image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1, &blit, VK_FILTER_LINEAR);
+
+        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        vkCmdPipelineBarrier(cmdBufferInfo.commandBuffer,
+            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+            0, nullptr,
+            0, nullptr,
+            1, &barrier);
+
+        if (mipWidth > 1) mipWidth /= 2;
+        if (mipHeight > 1) mipHeight /= 2;
     }
+
+    // final transition for mip level that isn't blitted from
+    barrier.subresourceRange.baseMipLevel = mipLevels - 1;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+    vkCmdPipelineBarrier(cmdBufferInfo.commandBuffer,
+        VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+        0, nullptr,
+        0, nullptr,
+        1, &barrier);
 
     endSingleTimeCommands(cmdBufferInfo);
 }
