@@ -154,11 +154,17 @@ private: //                         PRIVATE VARIABLES
     // can use same buffer for both indices and vertices
     VkBuffer vertexBuffer;
     VkDeviceMemory vertexBufferMemory;
+    
     VkBuffer indexBuffer;
     VkDeviceMemory indexBufferMemory;
+    
     VkImage textureImage;
     VkImageView textureImageView;
     VkDeviceMemory textureImageMemory;
+
+    VkImage depthImage;
+    VkImageView depthImageView;
+    VkDeviceMemory depthImageMemory;
     
     VkSampler textureSampler;
 
@@ -217,13 +223,15 @@ private: //                         PRIVATE FUNCTIONS
     void pickPhysicalDevice();
     void createLogicalDevice();
 
+    void createCommandPool();
+
     void createSwapchain();
     void createImageViews();
     void createRenderPass();
     void createDescriptorSetLayout();
     void createGraphicsPipeline();
+    void createDepthResources();
     void createFramebuffers();
-    void createCommandPool();
 
     void createTextureImage();
     void createTextureImageView();
@@ -249,7 +257,7 @@ private: //                         PRIVATE FUNCTIONS
 
     void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
         VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
-    VkImageView createImageView(VkImage image, VkFormat format);
+    VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
     void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
     void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
@@ -292,6 +300,14 @@ private: //                         PRIVATE FUNCTIONS
     VkShaderModule createShaderModule(const std::vector<char>& code) const;
 
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+
+    VkFormat findDepthFormat();
+    bool hasStencilComponent(VkFormat format);
+
+    /// <summary>
+    /// Finds supported format with specific tiling and features
+    /// </summary>
+    VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
     //                              CHOOSING SWAPCHAIN PARAMETERS
 
