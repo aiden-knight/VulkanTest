@@ -177,6 +177,10 @@ private: //                         PRIVATE VARIABLES
 
     QueueFamilyIndices queueFamilyIndices;
 
+    // OBJ
+    std::vector<Vertex> vertices;
+    std::vector<uint32_t> indices;
+
 private: //                         PRIVATE FUNCTIONS
     
     /// <summary>
@@ -238,6 +242,7 @@ private: //                         PRIVATE FUNCTIONS
     void createTextureSampler();
 
     // VkBuffer creation
+    void loadModel();
     void createVertexBuffer();
     void createIndexBuffer();
     void createUniformBuffers();

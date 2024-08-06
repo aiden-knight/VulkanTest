@@ -8,6 +8,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <stb_image.h>
+#include <tiny_obj_loader.h>
 
 #include <chrono>
 #include <iostream>
@@ -24,6 +25,9 @@
 
 constexpr uint32_t WIDTH = 400;
 constexpr uint32_t HEIGHT = 400;
+
+const std::string MODEL_PATH = "models/viking_room.obj";
+const std::string TEXTURE_PATH = "textures/viking_room.png";
 
 constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -128,7 +132,7 @@ struct UniformBufferObject {
     glm::mat4 proj;
 };
 
-const std::vector<Vertex> vertices = {
+const std::vector<Vertex> verticesOLD = {
     // SQUARE ONE
     {{ -0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
     {{ 0.5f,  -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
@@ -142,7 +146,7 @@ const std::vector<Vertex> vertices = {
     {{ 0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
 };
 
-const std::vector<uint16_t> indices = {
+const std::vector<uint16_t> indicesOLD = {
     0, 1, 2,
     1, 3, 2,
     4, 5, 6,

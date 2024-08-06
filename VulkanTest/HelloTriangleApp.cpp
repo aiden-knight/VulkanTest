@@ -78,7 +78,7 @@ void HelloTriangleApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32
 
     VkDeviceSize offsets[] = { 0 };
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, offsets);
-    vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+    vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
 
@@ -669,7 +669,7 @@ void HelloTriangleApp::createDepthResources() {
 void HelloTriangleApp::createTextureImage() {
     // load image
     int texWidth, texHeight, numChannels;
-    stbi_uc* pixels = stbi_load("textures/texture.jpg", &texWidth, &texHeight, &numChannels, STBI_rgb_alpha);
+    stbi_uc* pixels = stbi_load(TEXTURE_PATH.c_str(), &texWidth, &texHeight, &numChannels, STBI_rgb_alpha);
     VkDeviceSize size = texWidth * texHeight * 4;
 
     if (!pixels) {
@@ -729,6 +729,39 @@ void HelloTriangleApp::createTextureSampler() {
 
     if (vkCreateSampler(device, &createInfo, nullptr, &textureSampler) != VK_SUCCESS) {
         throw std::runtime_error("failed to create sampler");
+    }
+}
+
+void HelloTriangleApp::loadModel() {
+    tinyobj::attrib_t attrib;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string warn, err;
+
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str())) {
+        throw std::runtime_error(warn + err);
+    }
+
+    for (const auto& shape : shapes) {
+        for (const auto& index : shape.mesh.indices) {
+            Vertex vertex{};
+
+            vertex.pos = {
+                attrib.vertices[3 * index.vertex_index + 0],
+                attrib.vertices[3 * index.vertex_index + 1],
+                attrib.vertices[3 * index.vertex_index + 2]
+            };
+
+            vertex.texCoord = {
+                attrib.texcoords[2 * index.texcoord_index + 0],
+                1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
+            };
+
+            vertex.color = { 1.0f, 1.0f, 1.0f };
+
+            vertices.push_back(vertex);
+            indices.push_back(indices.size());
+        }
     }
 }
 
@@ -906,6 +939,7 @@ void HelloTriangleApp::initVulkan() {
     createTextureImageView();
     createTextureSampler();
 
+    loadModel();
     createVertexBuffer();
     createIndexBuffer();
     createUniformBuffers();
