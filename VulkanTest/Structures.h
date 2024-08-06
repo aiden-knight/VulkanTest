@@ -6,10 +6,13 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
 
 #include <stb_image.h>
 #include <tiny_obj_loader.h>
 
+#include <unordered_map>
 #include <chrono>
 #include <iostream>
 #include <stdexcept>
@@ -124,7 +127,21 @@ struct Vertex {
 
         return attributeDesc;
     }
+    bool operator==(const Vertex& other) const {
+        return pos == other.pos && color == other.color && texCoord == other.texCoord;
+    }
 };
+
+// for map
+namespace std {
+    template<> struct hash<Vertex> {
+        size_t operator()(Vertex const& vertex) const {
+            return ((hash<glm::vec3>()(vertex.pos) ^
+                (hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^
+                (hash<glm::vec2>()(vertex.texCoord) << 1);
+        }
+    };
+}
 
 struct UniformBufferObject {
     glm::mat4 model;
