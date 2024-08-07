@@ -159,6 +159,7 @@ private: //                         PRIVATE VARIABLES
     VkDeviceMemory indexBufferMemory;
     
     uint32_t mipLevels;
+    VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
     VkImage textureImage;
     VkImageView textureImageView;
     VkDeviceMemory textureImageMemory;
@@ -167,6 +168,10 @@ private: //                         PRIVATE VARIABLES
     VkImageView depthImageView;
     VkDeviceMemory depthImageMemory;
     
+    VkImage colorImage;
+    VkImageView colorImageView;
+    VkDeviceMemory colorImageMemory;
+
     VkSampler textureSampler;
 
     VkDescriptorPool descriptorPool;
@@ -236,6 +241,7 @@ private: //                         PRIVATE FUNCTIONS
     void createDescriptorSetLayout();
     void createGraphicsPipeline();
     void createDepthResources();
+    void createColorResources();
     void createFramebuffers();
 
     void createTextureImage();
@@ -261,7 +267,7 @@ private: //                         PRIVATE FUNCTIONS
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags flags, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     void copyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size) const;
 
-    void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, VkImageTiling tiling,
+    void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSample, VkFormat format, VkImageTiling tiling,
         VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
     void generateMipmaps(VkImage image, VkFormat format, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
     VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
@@ -308,6 +314,7 @@ private: //                         PRIVATE FUNCTIONS
 
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
+    VkSampleCountFlagBits getMaxUsableSampleCount();
     VkFormat findDepthFormat();
     bool hasStencilComponent(VkFormat format);
 
