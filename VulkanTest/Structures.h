@@ -1,7 +1,14 @@
 #pragma once
+// IMGUI
+#include "imgui.h"
+#include "imgui_impl_vulkan.h"
+#include "imgui_impl_glfw.h"
+
+// GLFW
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+// GLM
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
@@ -9,9 +16,11 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 
+// SINGLE INCLUDES
 #include <stb_image.h>
 #include <tiny_obj_loader.h>
 
+// STANDARD LIBRARY
 #include <unordered_map>
 #include <chrono>
 #include <iostream>
@@ -26,8 +35,8 @@
 #include <array>
 #include <cstring>
 
-constexpr uint32_t WIDTH = 400;
-constexpr uint32_t HEIGHT = 400;
+constexpr uint32_t WIDTH = 800;
+constexpr uint32_t HEIGHT = 600;
 
 const std::string MODEL_PATH = "models/viking_room.obj";
 const std::string TEXTURE_PATH = "textures/viking_room.png";

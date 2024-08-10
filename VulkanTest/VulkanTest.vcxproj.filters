@@ -16,6 +16,9 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{ba5313bc-4333-4242-b08f-4bc1f02d7d99}</UniqueIdentifier>
     </Filter>
+    <Filter Include="External Source Files">
+      <UniqueIdentifier>{923aaf69-d91f-4bbe-a8b9-9e91b602ba25}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -23,6 +26,30 @@
     </ClCompile>
     <ClCompile Include="HelloTriangleApp.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Structures.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\SDKs\imgui\imgui.cpp">
+      <Filter>External Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\SDKs\imgui\imgui_demo.cpp">
+      <Filter>External Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\SDKs\imgui\imgui_draw.cpp">
+      <Filter>External Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\SDKs\imgui\imgui_tables.cpp">
+      <Filter>External Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\SDKs\imgui\imgui_widgets.cpp">
+      <Filter>External Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\SDKs\imgui\backends\imgui_impl_glfw.cpp">
+      <Filter>External Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\SDKs\imgui\backends\imgui_impl_vulkan.cpp">
+      <Filter>External Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
