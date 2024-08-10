@@ -7,6 +7,9 @@ void HelloTriangleApp::run() {
     // vulkan object's creation
     initVulkan();
 
+    // create the imgui states
+    initIMGUI();
+
     // main loop that continues running until close event
     mainLoop();
 
@@ -28,6 +31,37 @@ void HelloTriangleApp::initGLFW() {
     glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 }
 
+void HelloTriangleApp::initIMGUI() {
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    io = &ImGui::GetIO();
+    io->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    io->ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+    ImGui::StyleColorsDark();
+
+    constexpr bool installCallbacks = true; // installs the callbacks for mouse movement and such for imgui before forwarding to already implemented user callbacks
+    ImGui_ImplGlfw_InitForVulkan(window, installCallbacks);
+
+    ImGui_ImplVulkan_InitInfo initInfo{};
+    initInfo.Instance = instance;
+    initInfo.PhysicalDevice = physicalDevice;
+    initInfo.Device = device;
+    initInfo.QueueFamily = queueFamilyIndices.graphicsFamily.value();
+    initInfo.Queue = graphicsQueue;
+    initInfo.PipelineCache = VK_NULL_HANDLE; // optional
+    initInfo.DescriptorPool = imguiDescriptorPool;
+    initInfo.RenderPass = renderPass;
+    initInfo.Subpass = 0; // optional
+    initInfo.MinImageCount = MAX_FRAMES_IN_FLIGHT;
+    initInfo.ImageCount = MAX_FRAMES_IN_FLIGHT;
+    initInfo.MSAASamples = msaaSamples;
+    initInfo.Allocator = nullptr; // optional
+    initInfo.CheckVkResultFn = checkVkResult;
+    ImGui_ImplVulkan_Init(&initInfo);
+}
+
 void HelloTriangleApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -46,7 +80,7 @@ void HelloTriangleApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32
 
     std::array<VkClearValue, 2> clearValues{};
     // set the clear value of the render pass info to black
-    clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+    clearValues[0].color = {{clearColor.x, clearColor.y, clearColor.z, clearColor.w}};
     clearValues[1].depthStencil = { 1.0f, 0 };
 
     renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
@@ -84,6 +118,10 @@ void HelloTriangleApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32
 
     // Draw command for the triangle
     vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0); 
+
+    // render the imgui
+    ImGui::Render();
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 
     // drawing is finished to end the render pass
     vkCmdEndRenderPass(commandBuffer);
@@ -173,7 +211,14 @@ void HelloTriangleApp::updateUniformBuffer(uint32_t currentImage) {
     float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
     UniformBufferObject ubo{};
-    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+    if (renderStatic) {
+        ubo.model = glm::mat4(1.0f);
+        startTime = currentTime;
+    } else {
+        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    }
+
     ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.proj = glm::perspective(glm::radians(45.0f), swapchainExtent.width / (float)swapchainExtent.height, 0.1f, 10.0f);
     ubo.proj[1][1] *= -1; // glm designed for opengl so flip Y
@@ -868,6 +913,18 @@ void HelloTriangleApp::createDescriptorPool() {
     if (vkCreateDescriptorPool(device, &createInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor pool");
     }
+
+    VkDescriptorPoolSize pool_sizes[] =
+    {
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 },
+    };
+    VkDescriptorPoolCreateInfo pool_info = {};
+    pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    pool_info.maxSets = 1;
+    pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
+    pool_info.pPoolSizes = pool_sizes;
+    vkCreateDescriptorPool(device, &pool_info, nullptr, &imguiDescriptorPool);
 }
 
 void HelloTriangleApp::createDescriptorSets() {
@@ -1464,6 +1521,9 @@ void HelloTriangleApp::mainLoop() {
         // poll window events
         glfwPollEvents();
 
+        // before render frame
+        drawImgui();
+
         // render frame
         drawFrame();
     }
@@ -1472,7 +1532,53 @@ void HelloTriangleApp::mainLoop() {
     vkDeviceWaitIdle(device);
 }
 
+void HelloTriangleApp::drawImgui() {
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+    if (showDemoWindow)
+        ImGui::ShowDemoWindow(&showDemoWindow);
+
+    {
+        static float f = 0.0f;
+        static int counter = 0;
+
+        ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+
+        ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+        ImGui::Checkbox("Demo Window", &showDemoWindow);      // Edit bools storing our window open/close state
+        ImGui::Checkbox("Render Static", &renderStatic);
+
+        ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+        ImGui::ColorEdit3("clear color", (float*)&clearColor); // Edit 3 floats representing a color
+
+        if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+            counter++;
+        ImGui::SameLine();
+        ImGui::Text("counter = %d", counter);
+
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io->Framerate, io->Framerate);
+        ImGui::End();
+    }
+}
+
 void HelloTriangleApp::cleanup() {
+    cleanupImgui();
+    cleanupVulkan();
+    cleanupGLFW();   
+}
+
+void HelloTriangleApp::cleanupImgui() {
+    ImGui_ImplVulkan_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
+    vkDestroyDescriptorPool(device, imguiDescriptorPool, nullptr);
+}
+
+void HelloTriangleApp::cleanupVulkan() {
     cleanupSwapchain();
 
     vkDestroySampler(device, textureSampler, nullptr);
@@ -1496,7 +1602,7 @@ void HelloTriangleApp::cleanup() {
         vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
         vkDestroyFence(device, inFlightFences[i], nullptr);
     }
-    
+
     vkDestroyCommandPool(device, transferCommandPool, nullptr);
     vkDestroyCommandPool(device, commandPool, nullptr);
 
@@ -1512,8 +1618,9 @@ void HelloTriangleApp::cleanup() {
 
     // destrory instance last as other things rely on it for destruction
     vkDestroyInstance(instance, nullptr);
+}
 
-    // cleanup glfw data
+void HelloTriangleApp::cleanupGLFW() {
     glfwDestroyWindow(window);
     glfwTerminate();
 }
@@ -1763,11 +1870,18 @@ bool HelloTriangleApp::checkDeviceSuitable(VkPhysicalDevice device) const {
     return hasQueueFamilies && hasExtensionSupport && swapchainAdequate && hasFeatureSupport;
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL HelloTriangleApp::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
-{
+VKAPI_ATTR VkBool32 VKAPI_CALL HelloTriangleApp::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
     std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
 
     return VK_FALSE;
+}
+
+void HelloTriangleApp::checkVkResult(VkResult err) {
+    if (err == 0) return;
+
+    std::cout << "Vulkan Error: VkResult = " << err << std::endl;
+
+    if (err < 0) abort();
 }
 
 void HelloTriangleApp::framebufferResizeCallback(GLFWwindow* window, int width, int height) {

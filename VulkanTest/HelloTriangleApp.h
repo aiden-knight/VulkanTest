@@ -187,6 +187,14 @@ private: //                         PRIVATE VARIABLES
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
 
+    // IMGUI
+    VkDescriptorPool imguiDescriptorPool;
+    ImGuiIO* io;
+
+    ImVec4 clearColor = ImVec4(0.0f, 0.00f, 0.00f, 1.00f);
+    bool showDemoWindow = false;
+    bool renderStatic = false;
+
 private: //                         PRIVATE FUNCTIONS
     
     /// <summary>
@@ -212,10 +220,16 @@ private: //                         PRIVATE FUNCTIONS
     /// </summary>
     void mainLoop();
 
+    void drawImgui();
+
     /// <summary>
     /// Cleans up vulkan objects and then glfw objects
     /// </summary>
     void cleanup();
+
+    void cleanupImgui();
+    void cleanupVulkan();
+    void cleanupGLFW();
 
     //                              INITIALISATION FUNCTIONS 
     
@@ -223,6 +237,11 @@ private: //                         PRIVATE FUNCTIONS
     /// Initialises the glfw window and sets up required glfw callbacks
     /// </summary>
     void initGLFW();
+
+    /// <summary>
+    /// Initialises ImGui
+    /// </summary>
+    void initIMGUI();
 
     // vulkan initialisation functions for creating respective objects
     void createInstance();
@@ -371,6 +390,8 @@ private: //                         PRIVATE FUNCTIONS
         VkDebugUtilsMessageTypeFlagsEXT messageType,
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
         void* pUserData);
+
+    static void checkVkResult(VkResult err);
 
     /// <summary>
     /// glfw callback for window resized or minimised
