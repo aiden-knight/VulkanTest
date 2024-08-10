@@ -178,7 +178,7 @@ void HelloTriangleApp::updateUniformBuffer(uint32_t currentImage) {
     ubo.proj = glm::perspective(glm::radians(45.0f), swapchainExtent.width / (float)swapchainExtent.height, 0.1f, 10.0f);
     ubo.proj[1][1] *= -1; // glm designed for opengl so flip Y
 
-    memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+    std::memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
 }
 
 void HelloTriangleApp::populateDebugUtilsMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
