@@ -54,7 +54,7 @@ void HelloTriangleApp::initIMGUI() {
     initInfo.DescriptorPool = imguiDescriptorPool;
     initInfo.RenderPass = renderPass;
     initInfo.Subpass = 0; // optional
-    initInfo.MinImageCount = 2;
+    initInfo.MinImageCount = MAX_FRAMES_IN_FLIGHT;
     initInfo.ImageCount = MAX_FRAMES_IN_FLIGHT;
     initInfo.MSAASamples = msaaSamples;
     initInfo.Allocator = nullptr; // optional
