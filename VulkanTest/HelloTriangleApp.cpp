@@ -38,6 +38,7 @@ void HelloTriangleApp::initIMGUI() {
     io->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     io->ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    //io->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     ImGui::StyleColorsDark();
 
@@ -60,6 +61,8 @@ void HelloTriangleApp::initIMGUI() {
     initInfo.Allocator = nullptr; // optional
     initInfo.CheckVkResultFn = checkVkResult;
     ImGui_ImplVulkan_Init(&initInfo);
+
+    texDS = ImGui_ImplVulkan_AddTexture(textureSampler, textureImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void HelloTriangleApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
@@ -182,6 +185,11 @@ void HelloTriangleApp::drawFrame() {
         throw std::runtime_error("failed to submit draw command buffer");
     }
 
+    // to deal with multiple windows
+    if (io->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.waitSemaphoreCount = 1;
@@ -916,12 +924,12 @@ void HelloTriangleApp::createDescriptorPool() {
 
     VkDescriptorPoolSize pool_sizes[] =
     {
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 },
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2 },
     };
     VkDescriptorPoolCreateInfo pool_info = {};
     pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    pool_info.maxSets = 1;
+    pool_info.maxSets = 2;
     pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
     pool_info.pPoolSizes = pool_sizes;
     vkCreateDescriptorPool(device, &pool_info, nullptr, &imguiDescriptorPool);
@@ -1559,6 +1567,8 @@ void HelloTriangleApp::drawImgui() {
         ImGui::SameLine();
         ImGui::Text("counter = %d", counter);
 
+        ImGui::Image((ImTextureID)texDS, ImVec2(256, 256));
+
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io->Framerate, io->Framerate);
         ImGui::End();
     }
@@ -1571,6 +1581,8 @@ void HelloTriangleApp::cleanup() {
 }
 
 void HelloTriangleApp::cleanupImgui() {
+    ImGui_ImplVulkan_RemoveTexture(texDS);
+
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();

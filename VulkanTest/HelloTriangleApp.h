@@ -194,6 +194,7 @@ private: //                         PRIVATE VARIABLES
     ImVec4 clearColor = ImVec4(0.0f, 0.00f, 0.00f, 1.00f);
     bool showDemoWindow = false;
     bool renderStatic = false;
+    VkDescriptorSet texDS;
 
 private: //                         PRIVATE FUNCTIONS
     
