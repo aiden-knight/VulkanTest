@@ -1,7 +1,7 @@
 #include "HelloTriangleApp.h"
 
 int main() {
-    HelloTriangleApp app;
+    HelloTriangleApp app{};
 
     try {
         app.run();

@@ -1,35 +1,25 @@
 #pragma once
+#include <memory>
 #include "Structures.h"
+
+class GraphicsInstance;
+class Window;
+class Surface;
+class PhysicalDevice;
 
 class HelloTriangleApp {
 public: //                         PUBLIC FUNCTIONS
-
-    /// <summary>
-    /// Initalises, runs, then cleans up the vulkan application
-    /// </summary>
+    HelloTriangleApp();
+    ~HelloTriangleApp();
+    
     void run();
-
 private: //                         PRIVATE VARIABLES
 
-    /// <summary>
-    /// Pointer to the glfw window in use
-    /// </summary>
-    GLFWwindow* window = nullptr;
-    
-    /// <summary>
-    /// Used to send messages from validation layers to application assuming they're enabled
-    /// </summary>
-    VkDebugUtilsMessengerEXT debugMessenger;
+    std::unique_ptr<Window> window;
+    std::unique_ptr<GraphicsInstance> instance;
+    std::unique_ptr<PhysicalDevice> physicalDevice;
 
-    /// <summary>
-    /// Connection between application and the vulkan library
-    /// </summary>
-    VkInstance instance;
-
-    /// <summary>
-    /// Handle to reference the graphics card used by vulkan
-    /// </summary>
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    std::unique_ptr<Surface> surface;
 
     /// <summary>
     /// Logical device, aka the application's software representaton of the physical device
@@ -47,11 +37,6 @@ private: //                         PRIVATE VARIABLES
     VkQueue presentQueue;
 
     VkQueue transferQueue;
-
-    /// <summary>
-    /// abstraction of the window surface to be rendered to, required for on-screen rendering
-    /// </summary>
-    VkSurfaceKHR surface;
 
     /// <summary>
     /// Queue of images to render to the screen
@@ -120,11 +105,6 @@ private: //                         PRIVATE VARIABLES
     /// Responsible for temporary transfer command buffers
     /// </summary>
     VkCommandPool transferCommandPool;
-    
-    /// <summary>
-    /// Whether the window, thus framebuffer, has been resized
-    /// </summary>
-    bool frameBufferResized = false;
 
     /// <summary>
     /// The current frame to be rendered by the GPU, will be from [0, MAX_FRAMES_IN_FLIGHT)
@@ -159,7 +139,6 @@ private: //                         PRIVATE VARIABLES
     VkDeviceMemory indexBufferMemory;
     
     uint32_t mipLevels;
-    VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
     VkImage textureImage;
     VkImageView textureImageView;
     VkDeviceMemory textureImageMemory;
@@ -180,8 +159,6 @@ private: //                         PRIVATE VARIABLES
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VkDeviceMemory> uniformBuffersMemory;
     std::vector<void*> uniformBuffersMapped;
-
-    QueueFamilyIndices queueFamilyIndices;
 
     // OBJ
     std::vector<Vertex> vertices;
@@ -211,16 +188,6 @@ private: //                         PRIVATE FUNCTIONS
 
     void updateUniformBuffer(uint32_t currentImage);
 
-    /// <summary>
-    /// For re-use, fills in the messenger create info for sending debug messages to the same callback
-    /// </summary>
-    void populateDebugUtilsMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
-
-    /// <summary>
-    /// Main loop that runs until glfw says window should close
-    /// </summary>
-    void mainLoop();
-
     void drawImgui();
 
     /// <summary>
@@ -230,27 +197,15 @@ private: //                         PRIVATE FUNCTIONS
 
     void cleanupImgui();
     void cleanupVulkan();
-    void cleanupGLFW();
 
     //                              INITIALISATION FUNCTIONS 
-    
-    /// <summary>
-    /// Initialises the glfw window and sets up required glfw callbacks
-    /// </summary>
-    void initGLFW();
 
     /// <summary>
     /// Initialises ImGui
     /// </summary>
     void initIMGUI();
 
-    // vulkan initialisation functions for creating respective objects
-    void createInstance();
-    void setupDebugMessenger();
-    void createSurface();
-
     // GPU interfacing
-    void pickPhysicalDevice();
     void createLogicalDevice();
 
     void createCommandPool();
@@ -309,32 +264,12 @@ private: //                         PRIVATE FUNCTIONS
     void recreateSwapchain();
 
     /// <summary>
-    /// Creates and returns a vector of extensions required for the vulkan instance
-    /// </summary>
-    std::vector<const char*> getRequiredExtensions() const;
-
-    /// <summary>
-    /// Gets the indices of where the desired queues are on a physical device
-    /// </summary>
-    /// <param name="device">The GPU to look on</param>
-    /// <returns>A struct containing the indices or value that indicates they weren't found</returns>
-    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) const;
-
-    /// <summary>
-    /// Checks what capabilites, image formats, and present modes the GPU supports for swapchains
-    /// </summary>
-    /// <param name="device">GPU to check</param>
-    /// <returns>Struct containing info wanted</returns>
-    SwapchainSupportDetails querySwapchainSupport(VkPhysicalDevice device) const;
-
-    /// <summary>
     /// Creates a vulkan shader module from compiled binary code of the shader
     /// </summary>
     VkShaderModule createShaderModule(const std::vector<char>& code) const;
 
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
-    VkSampleCountFlagBits getMaxUsableSampleCount();
     VkFormat findDepthFormat();
     bool hasStencilComponent(VkFormat format);
 
@@ -362,42 +297,7 @@ private: //                         PRIVATE FUNCTIONS
 
     //                              VALIDATING VULKAN REQUIREMENTS
 
-    /// <summary>
-    /// Checks if required instance extensions are supported
-    /// </summary>
-    /// <param name="extensions">Required extensions</param>
-    bool checkSupported(const std::vector<const char*> extensions) const;
-
-    /// <summary>
-    /// Checks if the validation layers are supported on the instance
-    /// </summary>
-    bool checkValidationLayerSupport() const;
-
-    /// <summary>
-    /// Checks if the GPU supports the extensions required
-    /// </summary>
-    bool checkDeviceExtensionSupport(VkPhysicalDevice device) const;
-
-    /// <summary>
-    /// Checks if the GPU has the required queue families, swapchain support, and extensions support
-    /// </summary>
-    bool checkDeviceSuitable(VkPhysicalDevice device) const;
-
-    /// <summary>
-    /// vulkan debug callback for when validation layers are setup
-    /// </summary>
-    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
-        VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-        VkDebugUtilsMessageTypeFlagsEXT messageType,
-        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-        void* pUserData);
-
     static void checkVkResult(VkResult err);
-
-    /// <summary>
-    /// glfw callback for window resized or minimised
-    /// </summary>
-    static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
 
     /// <summary>
     /// Reads binary in from a file
