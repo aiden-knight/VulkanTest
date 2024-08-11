@@ -1,11 +1,13 @@
 #pragma once
 #include <memory>
+#include "Queues.h"
 #include "Structures.h"
 
 class GraphicsInstance;
 class Window;
 class Surface;
 class PhysicalDevice;
+class LogicalDevice;
 
 class HelloTriangleApp {
 public: //                         PUBLIC FUNCTIONS
@@ -14,29 +16,16 @@ public: //                         PUBLIC FUNCTIONS
     
     void run();
 private: //                         PRIVATE VARIABLES
+    std::unique_ptr<GraphicsInstance> instance;
 
     std::unique_ptr<Window> window;
-    std::unique_ptr<GraphicsInstance> instance;
-    std::unique_ptr<PhysicalDevice> physicalDevice;
-
     std::unique_ptr<Surface> surface;
 
-    /// <summary>
-    /// Logical device, aka the application's software representaton of the physical device
-    /// </summary>
-    VkDevice device;
 
-    /// <summary>
-    /// A queue on the physical device that supports graphics commands
-    /// </summary>
-    VkQueue graphicsQueue;
+    std::unique_ptr<PhysicalDevice> physicalDevice;
+    std::unique_ptr<LogicalDevice> device;
 
-    /// <summary>
-    /// A queue on the physical device that supports screen presentation commands
-    /// </summary>
-    VkQueue presentQueue;
-
-    VkQueue transferQueue;
+    Queues queues;
 
     /// <summary>
     /// Queue of images to render to the screen
@@ -204,9 +193,6 @@ private: //                         PRIVATE FUNCTIONS
     /// Initialises ImGui
     /// </summary>
     void initIMGUI();
-
-    // GPU interfacing
-    void createLogicalDevice();
 
     void createCommandPool();
 

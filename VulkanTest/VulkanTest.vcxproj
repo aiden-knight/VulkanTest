@@ -147,6 +147,7 @@
     <ClCompile Include="Debug.cpp" />
     <ClCompile Include="GraphicsInstance.cpp" />
     <ClCompile Include="HelloTriangleApp.cpp" />
+    <ClCompile Include="LogicalDevice.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PhysicalDevice.cpp" />
     <ClCompile Include="Structures.cpp" />
@@ -157,7 +158,9 @@
     <ClInclude Include="Debug.h" />
     <ClInclude Include="GraphicsInstance.h" />
     <ClInclude Include="HelloTriangleApp.h" />
+    <ClInclude Include="LogicalDevice.h" />
     <ClInclude Include="PhysicalDevice.h" />
+    <ClInclude Include="Queues.h" />
     <ClInclude Include="Structures.h" />
     <ClInclude Include="Surface.h" />
     <ClInclude Include="Window.h" />
