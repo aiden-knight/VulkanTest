@@ -8,6 +8,8 @@ class Window;
 class Surface;
 class PhysicalDevice;
 class LogicalDevice;
+class Swapchain;
+class CommandPool;
 
 class HelloTriangleApp {
 public: //                         PUBLIC FUNCTIONS
@@ -21,36 +23,24 @@ private: //                         PRIVATE VARIABLES
     std::unique_ptr<Window> window;
     std::unique_ptr<Surface> surface;
 
-
     std::unique_ptr<PhysicalDevice> physicalDevice;
     std::unique_ptr<LogicalDevice> device;
-
     Queues queues;
 
     /// <summary>
-    /// Queue of images to render to the screen
-    /// Owner of the framebuffers that are rendered to
+    /// Responsible for temporary transfer command buffers
     /// </summary>
-    VkSwapchainKHR swapchain;
+    std::unique_ptr<CommandPool> transferCommandPool;
 
+    std::unique_ptr<CommandPool> commandPool;
     /// <summary>
-    /// Vector of the swapchain's images
-    /// Each containing the actual data of the images
+    /// Buffer of commands to be executed, often cleared and written into
     /// </summary>
-    std::vector<VkImage> swapchainImages;
-
-    /// <summary>
-    /// Vector of the swapchain's image views
-    /// Each containing data on how to interpret the linked image's data
-    /// </summary>
-    std::vector<VkImageView> swapchainImageViews;
-
-    /// <summary>
-    /// Vector of the swapchain's framebuffers
-    /// Each a collection of memory attachments used for rendering to by the render pass
-    /// </summary>
-    std::vector<VkFramebuffer> swapchainFramebuffers;
+    std::vector<VkCommandBuffer> commandBuffers;
     
+
+    std::unique_ptr<Swapchain> swapchain;
+
     /// <summary>
     /// Render pass encapsulates the state needed for renderering to the target, for example: 
     /// what buffers will be in the framebuffer rendered to;
@@ -72,38 +62,13 @@ private: //                         PRIVATE VARIABLES
     /// <summary>
     /// Representation of the entire graphics pipeline, both fixed function and programmable parts in the form of shaders
     /// </summary>
-    VkPipeline graphicsPipeline;
-
-    /// <summary>
-    /// The format that images in the swapchain take, aka the way the pixel data is stored (ie 32 bytes RGBA)
-    /// and what colour space they are in (ie sRGB)
-    /// </summary>
-    VkFormat swapchainImageFormat;
-
-    /// <summary>
-    /// The width and height of images in the swapchain
-    /// </summary>
-    VkExtent2D swapchainExtent;
-
-    /// <summary>
-    /// Responsible for memory management and allocation of command buffers
-    /// </summary>
-    VkCommandPool commandPool;
-
-    /// <summary>
-    /// Responsible for temporary transfer command buffers
-    /// </summary>
-    VkCommandPool transferCommandPool;
+    VkPipeline graphicsPipeline;    
 
     /// <summary>
     /// The current frame to be rendered by the GPU, will be from [0, MAX_FRAMES_IN_FLIGHT)
     /// </summary>
     uint32_t currentFrame = 0;
 
-    /// <summary>
-    /// Buffer of commands to be executed, often cleared and written into
-    /// </summary>
-    std::vector<VkCommandBuffer> commandBuffers;
 
     /// <summary>
     /// Semaphore to ensure image has been acquired fully before GPU renders to it
@@ -131,14 +96,6 @@ private: //                         PRIVATE VARIABLES
     VkImage textureImage;
     VkImageView textureImageView;
     VkDeviceMemory textureImageMemory;
-
-    VkImage depthImage;
-    VkImageView depthImageView;
-    VkDeviceMemory depthImageMemory;
-    
-    VkImage colorImage;
-    VkImageView colorImageView;
-    VkDeviceMemory colorImageMemory;
 
     VkSampler textureSampler;
 
@@ -194,16 +151,9 @@ private: //                         PRIVATE FUNCTIONS
     /// </summary>
     void initIMGUI();
 
-    void createCommandPool();
-
-    void createSwapchain();
-    void createImageViews();
     void createRenderPass();
     void createDescriptorSetLayout();
     void createGraphicsPipeline();
-    void createDepthResources();
-    void createColorResources();
-    void createFramebuffers();
 
     void createTextureImage();
     void createTextureImageView();
@@ -217,7 +167,6 @@ private: //                         PRIVATE FUNCTIONS
 
     void createDescriptorPool();
     void createDescriptorSets();
-    void createCommandBuffers();
     void createSyncObjects();
 
     /// <summary>
@@ -228,21 +177,8 @@ private: //                         PRIVATE FUNCTIONS
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags flags, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     void copyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size) const;
 
-    void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSample, VkFormat format, VkImageTiling tiling,
-        VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
     void generateMipmaps(VkImage image, VkFormat format, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
-    VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
-    void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels);
     void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
-
-    VkCommandBuffer beginSingleTimeCommands(VkCommandPool commandPool) const;
-    void endSingleTimeCommands(CommandBufferSubmitInfo info) const;
-    void endSingleTimeCommandsQueueTransfer(CommandBufferSubmitInfo src, CommandBufferSubmitInfo dst, VkPipelineStageFlags flags) const;
-
-    /// <summary>
-    /// Destroys all swapchain specific objects
-    /// </summary>
-    void cleanupSwapchain();
 
     /// <summary>
     /// If window has resized, calls cleanupSwapchain() then creates new swapchain with new window size
@@ -253,33 +189,6 @@ private: //                         PRIVATE FUNCTIONS
     /// Creates a vulkan shader module from compiled binary code of the shader
     /// </summary>
     VkShaderModule createShaderModule(const std::vector<char>& code) const;
-
-    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-
-    VkFormat findDepthFormat();
-    bool hasStencilComponent(VkFormat format);
-
-    /// <summary>
-    /// Finds supported format with specific tiling and features
-    /// </summary>
-    VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
-
-    //                              CHOOSING SWAPCHAIN PARAMETERS
-
-    /// <summary>
-    /// Chooses the best image format for the swapchain out of those available
-    /// </summary>
-    VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) const;
-
-    /// <summary>
-    /// Chooses the best present mode for the swapchain out of those available
-    /// </summary>
-    VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const;
-
-    /// <summary>
-    /// Calculates the swapchain extent that best fits framebuffer but still abides by capabilities
-    /// </summary>
-    VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) const;
 
     //                              VALIDATING VULKAN REQUIREMENTS
 

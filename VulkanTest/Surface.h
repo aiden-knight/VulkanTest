@@ -17,6 +17,7 @@ private:
 	/// abstraction of the window surface to be rendered to, required for on-screen rendering
 	/// </summary>
 	VkSurfaceKHR surface;
+
 	const std::unique_ptr<GraphicsInstance>& instanceRef;
 };
 

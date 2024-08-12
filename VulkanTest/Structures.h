@@ -35,13 +35,7 @@
 const std::string MODEL_PATH = "models/viking_room.obj";
 const std::string TEXTURE_PATH = "textures/viking_room.png";
 
-constexpr int MAX_FRAMES_IN_FLIGHT = 2;
-
-struct CommandBufferSubmitInfo {
-    VkCommandPool commandPool = VK_NULL_HANDLE;
-    VkQueue queueHandle = VK_NULL_HANDLE;
-    VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
-};
+constexpr int MAX_FRAMES_IN_FLIGHT = 3;
 
 struct Vertex {
     glm::vec3 pos;
@@ -98,25 +92,4 @@ struct UniformBufferObject {
     glm::mat4 model;
     glm::mat4 view;
     glm::mat4 proj;
-};
-
-const std::vector<Vertex> verticesOLD = {
-    // SQUARE ONE
-    {{ -0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-    {{ 0.5f,  -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{-0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-    {{ 0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
-
-    // SQUARE TWO
-    { { -0.5f, -0.5f, -0.5f }, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f} },
-    {{ 0.5f,  -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{-0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-    {{ 0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
-};
-
-const std::vector<uint16_t> indicesOLD = {
-    0, 1, 2,
-    1, 3, 2,
-    4, 5, 6,
-    5, 7, 6
 };

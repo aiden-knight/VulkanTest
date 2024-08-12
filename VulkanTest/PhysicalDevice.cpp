@@ -3,6 +3,10 @@
 #include "Surface.h"
 #include "GraphicsInstance.h"
 
+const std::vector<const char*> PhysicalDevice::deviceExtensions = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME
+};
+
 PhysicalDevice::PhysicalDevice(const std::unique_ptr<GraphicsInstance>& instance, const std::unique_ptr<Surface>& surface) {
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(instance->getInstance(), &deviceCount, nullptr);
@@ -14,10 +18,12 @@ PhysicalDevice::PhysicalDevice(const std::unique_ptr<GraphicsInstance>& instance
     std::vector<VkPhysicalDevice> devices(deviceCount);
     vkEnumeratePhysicalDevices(instance->getInstance(), &deviceCount, devices.data());
 
+    device = VK_NULL_HANDLE;
+
     // find first device that is sufficient for running the program
     for (const auto& device : devices) {
         if (!checkDeviceExtensionSupport(device)) continue; // if device doesn't support extensions we want skip
-        
+
         // set device to one we're checking
         this->device = device;
         findQueueFamilies(surface); // find desired queue families
@@ -48,7 +54,7 @@ bool PhysicalDevice::checkDeviceSuitable() const {
     bool hasFeatureSupport = deviceFeatures.samplerAnisotropy;
     
     bool hasQueueFamilies = queueFamilyIndices.isComplete();
-    bool swapchainAdequate = !(swapchainSupportDetails.formats.empty() || swapchainSupportDetails.presentModes.empty());;
+    bool swapchainAdequate = !(supportDetails.formats.empty() || supportDetails.presentModes.empty());;
 
     return hasQueueFamilies && swapchainAdequate && hasFeatureSupport;
 }
@@ -82,24 +88,24 @@ void PhysicalDevice::findQueueFamilies(const std::unique_ptr<Surface>& surface) 
     }
 }
 
-void PhysicalDevice::querySwapchainSupport(const std::unique_ptr<Surface>& surfacePtr) {
-    swapchainSupportDetails = SwapchainSupportDetails(); // reset back to base
+void PhysicalDevice::querySwapchainSupport(const std::unique_ptr<Surface>& surface) {
+    supportDetails = SwapchainSupportDetails(); // reset back to base
 
-    VkSurfaceKHR surface = surfacePtr->getSurface();
+    VkSurfaceKHR surfaceHandle = surface->getSurface();
 
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &swapchainSupportDetails.capabilities);
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surfaceHandle, &supportDetails.capabilities);
 
     uint32_t formatCount = 0, presentModeCount = 0;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surfaceHandle, &formatCount, nullptr);
     if (formatCount != 0) {
-        swapchainSupportDetails.formats.resize(formatCount);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, swapchainSupportDetails.formats.data());
+        supportDetails.formats.resize(formatCount);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surfaceHandle, &formatCount, supportDetails.formats.data());
     }
 
-    vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device, surfaceHandle, &presentModeCount, nullptr);
     if (presentModeCount != 0) {
-        swapchainSupportDetails.presentModes.resize(presentModeCount);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, swapchainSupportDetails.presentModes.data());
+        supportDetails.presentModes.resize(presentModeCount);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surfaceHandle, &presentModeCount, supportDetails.presentModes.data());
     }
 }
 

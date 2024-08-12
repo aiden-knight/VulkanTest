@@ -1,9 +1,9 @@
 #pragma once
 #include <vulkan/vulkan.h>
-#include <optional>
 #include <memory>
 #include <vector>
 #include <set>
+#include <optional> 
 
 class Surface;
 class GraphicsInstance;
@@ -29,21 +29,18 @@ struct SwapchainSupportDetails {
     std::vector<VkPresentModeKHR> presentModes;
 };
 
-const std::vector<const char*> deviceExtensions = {
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME
-};
-
 class PhysicalDevice {
 public:
     PhysicalDevice(const std::unique_ptr<GraphicsInstance>& instance, const std::unique_ptr<Surface>& surface);
 
     const VkPhysicalDevice getPhysicalDevice() const { return device; }
     const QueueFamilyIndices getQueueFamilyIndices() const { return queueFamilyIndices; }
-    const SwapchainSupportDetails getSwapchainSupportDetails() const { return swapchainSupportDetails; }
+    const SwapchainSupportDetails getSwapchainSupportDetails() const { return supportDetails; }
     const VkSampleCountFlagBits getSampleCount() const { return msaaSampleCount; }
 
     void updateSwapchainSupport(const std::unique_ptr<Surface>& surface);
 
+    static const std::vector<const char*> getDeviceExtensions() { return deviceExtensions; }
 private:
     /// <summary>
     /// Checks various suitability requirements of the GPU
@@ -53,7 +50,7 @@ private:
     /// <summary>
     /// Gets the indices of where the desired queues are on a physical device
     /// </summary>
-	void findQueueFamilies(const std::unique_ptr<Surface>& surface);
+    void findQueueFamilies(const std::unique_ptr<Surface>& surface);
 
     /// <summary>
     /// Checks what capabilites, image formats, and present modes the GPU supports for swapchains
@@ -70,9 +67,10 @@ private:
 	/// <summary>
 	/// Handle to reference the graphics card used by vulkan
 	/// </summary>
-	VkPhysicalDevice device = VK_NULL_HANDLE;
-
-    QueueFamilyIndices queueFamilyIndices;
-    SwapchainSupportDetails swapchainSupportDetails;
+	VkPhysicalDevice device;
     VkSampleCountFlagBits msaaSampleCount;
+    QueueFamilyIndices queueFamilyIndices;
+    SwapchainSupportDetails supportDetails;
+
+    static const std::vector<const char*> deviceExtensions;
 };

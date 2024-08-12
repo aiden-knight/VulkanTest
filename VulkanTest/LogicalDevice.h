@@ -4,6 +4,7 @@
 #include "Queues.h"
 
 class PhysicalDevice;
+struct QueueFamilyIndices;
 
 class LogicalDevice {
 public:
@@ -11,7 +12,7 @@ public:
 	~LogicalDevice();
 
 	const VkDevice getDevice() const { return device; }
-	Queues getQueueHandles(const std::unique_ptr<PhysicalDevice>& physicalDevice) const;
+	Queues getQueueHandles(const QueueFamilyIndices& indices) const;
 private:
 	/// <summary>
 	/// Logical device, aka the application's software representaton of the physical device

@@ -21,7 +21,6 @@ LogicalDevice::LogicalDevice(const std::unique_ptr<PhysicalDevice>& physicalDevi
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
-
     // DEVICE FEATURES
     VkPhysicalDeviceFeatures deviceFeatures{};
     deviceFeatures.samplerAnisotropy = VK_TRUE;
@@ -33,6 +32,7 @@ LogicalDevice::LogicalDevice(const std::unique_ptr<PhysicalDevice>& physicalDevi
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
     createInfo.pEnabledFeatures = &deviceFeatures;
 
+    auto deviceExtensions = PhysicalDevice::getDeviceExtensions();
     createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
@@ -54,8 +54,7 @@ LogicalDevice::~LogicalDevice() {
 	vkDestroyDevice(device, nullptr);
 }
 
-Queues LogicalDevice::getQueueHandles(const std::unique_ptr<PhysicalDevice>& physicalDevice) const {
-    QueueFamilyIndices indices = physicalDevice->getQueueFamilyIndices();
+Queues LogicalDevice::getQueueHandles(const QueueFamilyIndices& indices) const {
     Queues queues{};
 
     vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &queues.graphics);
