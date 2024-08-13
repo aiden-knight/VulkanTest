@@ -11,6 +11,7 @@ class CommandPool;
 class LogicalDevice;
 class PhysicalDevice;
 
+// @TODO NEED DESCRIPTOR SET PER MODEL
 class Model {
 public:
 	Model(const std::unique_ptr<LogicalDevice>& device, const std::unique_ptr<PhysicalDevice>& physicalDevice, const std::unique_ptr<CommandPool>& graphicsPool, const std::unique_ptr<CommandPool>& transferPool, std::string path);
