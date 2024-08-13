@@ -170,10 +170,6 @@ private: //                         PRIVATE FUNCTIONS
     /// </summary>
     VkShaderModule createShaderModule(const std::vector<char>& code) const;
 
-    //                              VALIDATING VULKAN REQUIREMENTS
-
-    static void checkVkResult(VkResult err);
-
     /// <summary>
     /// Reads binary in from a file
     /// </summary>

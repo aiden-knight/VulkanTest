@@ -23,6 +23,8 @@ namespace Debug {
 		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 		void* pUserData);
 
+	void checkVkResult(VkResult err);
+
 	/// <summary>
 	/// For re-use, fills in the messenger create info for sending debug messages to the same callback
 	/// </summary>

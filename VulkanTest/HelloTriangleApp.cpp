@@ -72,7 +72,7 @@ void HelloTriangleApp::initIMGUI() {
     initInfo.ImageCount = MAX_FRAMES_IN_FLIGHT;
     initInfo.MSAASamples = physicalDevice->getSampleCount();
     initInfo.Allocator = nullptr; // optional
-    initInfo.CheckVkResultFn = checkVkResult;
+    initInfo.CheckVkResultFn = Debug::checkVkResult;
     ImGui_ImplVulkan_Init(&initInfo);
 
     texDS = ImGui_ImplVulkan_AddTexture(textureSampler, texture->getImageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -84,7 +84,7 @@ void HelloTriangleApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32
 
     // begin recording commands to the command buffer
     if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-        throw std::runtime_error("failed to begin recording command buffer");
+        Debug::exception("failed to begin recording command buffer");
     }
 
     const VkExtent2D swapchainExtent = swapchain->getExtent();
@@ -141,7 +141,7 @@ void HelloTriangleApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32
 
     // finished recording commands so end command buffer recording
     if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
-        throw std::runtime_error("failed to record command buffer");
+        Debug::exception("failed to record command buffer");
     }
 }
 
@@ -158,7 +158,7 @@ void HelloTriangleApp::drawFrame() {
         recreateSwapchain();
         return;
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-        throw std::runtime_error("failed to acquire swap chain image!");
+        Debug::exception("failed to acquire swap chain image!");
     }
 
     // reset fence ready for the queue submit call, done here as if statement may return early
@@ -192,7 +192,7 @@ void HelloTriangleApp::drawFrame() {
 
     // submit the command buffers to the graphics queue with the relevant fence to signal once it's safe to reuse the command buffer
     if (vkQueueSubmit(queues.graphics, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
-        throw std::runtime_error("failed to submit draw command buffer");
+        Debug::exception("failed to submit draw command buffer");
     }
 
     // to deal with multiple windows
@@ -216,7 +216,7 @@ void HelloTriangleApp::drawFrame() {
         window->resetResized();
         recreateSwapchain();
     } else if (result != VK_SUCCESS) {
-        throw std::runtime_error("failed to present swap chain image!");
+        Debug::exception("failed to present swap chain image!");
     }
 
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
@@ -316,7 +316,7 @@ void HelloTriangleApp::createRenderPass() {
     renderPassInfo.pDependencies = &dependency;
 
     if (vkCreateRenderPass(device->getDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create render pass");
+        Debug::exception("failed to create render pass");
     }
 }
 
@@ -341,7 +341,7 @@ void HelloTriangleApp::createDescriptorSetLayout() {
     createInfo.pBindings = bindings.data();
 
     if (vkCreateDescriptorSetLayout(device->getDevice(), &createInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create descriptor set layout");
+        Debug::exception("failed to create descriptor set layout");
     }
 }
 
@@ -446,7 +446,7 @@ void HelloTriangleApp::createGraphicsPipeline() {
     pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
 
     if (vkCreatePipelineLayout(device->getDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create pipeline layout");
+        Debug::exception("failed to create pipeline layout");
     }
 
     // CREATE PIPELINE
@@ -469,7 +469,7 @@ void HelloTriangleApp::createGraphicsPipeline() {
     pipelineInfo.subpass = 0;
 
     if (vkCreateGraphicsPipelines(device->getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create graphics pipeline");
+        Debug::exception("failed to create graphics pipeline");
     }
 
     // destroy used shaders
@@ -500,7 +500,7 @@ void HelloTriangleApp::createTextureSampler() {
     createInfo.maxLod = static_cast<float>(texture->getMipLevels());
 
     if (vkCreateSampler(device->getDevice(), &createInfo, nullptr, &textureSampler) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create sampler");
+        Debug::exception("failed to create sampler");
     }
 }
 
@@ -518,7 +518,7 @@ void HelloTriangleApp::createDescriptorPool() {
     createInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
     if (vkCreateDescriptorPool(device->getDevice(), &createInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create descriptor pool");
+        Debug::exception("failed to create descriptor pool");
     }
 
     VkDescriptorPoolSize pool_sizes[] =
@@ -545,7 +545,7 @@ void HelloTriangleApp::createDescriptorSets() {
 
     descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
     if (vkAllocateDescriptorSets(device->getDevice(), &allocInfo, descriptorSets.data()) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate descriptor sets");
+        Debug::exception("failed to allocate descriptor sets");
     }
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -596,7 +596,7 @@ void HelloTriangleApp::createSyncObjects() {
         if (vkCreateSemaphore(device->getDevice(), &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
             vkCreateSemaphore(device->getDevice(), &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
             vkCreateFence(device->getDevice(), &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create sync objects!");
+            Debug::exception("failed to create sync objects!");
         }
     }
 }
@@ -752,18 +752,10 @@ VkShaderModule HelloTriangleApp::createShaderModule(const std::vector<char>& cod
 
     VkShaderModule shaderModule;
     if (vkCreateShaderModule(device->getDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create shader module");
+        Debug::exception("failed to create shader module");
     }
 
     return shaderModule;
-}
-
-void HelloTriangleApp::checkVkResult(VkResult err) {
-    if (err == 0) return;
-
-    Debug::log("Vulkan Error: VkResult = " + err);
-
-    if (err < 0) abort();
 }
 
 std::vector<char> HelloTriangleApp::readFile(const std::string& filename) {
