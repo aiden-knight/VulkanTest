@@ -19,15 +19,45 @@
     <Filter Include="External Source Files">
       <UniqueIdentifier>{923aaf69-d91f-4bbe-a8b9-9e91b602ba25}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Vulkan">
+      <UniqueIdentifier>{9379df5d-7c71-452f-85ea-1f0cbb2a9554}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Vulkan">
+      <UniqueIdentifier>{b710abb5-25f8-43f0-afe6-865dc9aaa9d8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\Window">
+      <UniqueIdentifier>{f18832ca-8a24-4ec2-861d-fc133d5ad2aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Vulkan\Window">
+      <UniqueIdentifier>{6e5a43b9-f317-4b29-af74-434370b22b95}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Vulkan\Device">
+      <UniqueIdentifier>{53ffd014-88d0-42f5-8219-97196e625a6a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\Device">
+      <UniqueIdentifier>{a60eefa9-ae6d-4dd5-9510-e124a6f928b6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Vulkan\Rendering">
+      <UniqueIdentifier>{f585b51d-058c-4461-b10c-71718d120fc6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\Rendering">
+      <UniqueIdentifier>{b661f53e-1830-4895-b3cb-a5c2d4e6a0f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Debugging">
+      <UniqueIdentifier>{1e843383-082d-45a0-95b9-158dc03e69c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Debugging">
+      <UniqueIdentifier>{d034b496-16d5-4088-8eaf-7a4fa56d3501}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Misc">
+      <UniqueIdentifier>{f0453947-e8bc-43f8-8872-b057068944ff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Misc">
+      <UniqueIdentifier>{65a2d263-dbc2-4b16-824b-15c35336848a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="HelloTriangleApp.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Structures.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\..\..\SDKs\imgui\imgui.cpp">
@@ -51,73 +81,91 @@
     <ClCompile Include="..\..\..\..\..\..\..\SDKs\imgui\backends\imgui_impl_vulkan.cpp">
       <Filter>External Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GraphicsInstance.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Window.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Debug.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PhysicalDevice.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\..\..\..\SDKs\imgui\misc\cpp\imgui_stdlib.cpp">
       <Filter>External Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Window.cpp">
+      <Filter>Source Files\Vulkan\Window</Filter>
+    </ClCompile>
     <ClCompile Include="Surface.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Vulkan\Window</Filter>
     </ClCompile>
     <ClCompile Include="LogicalDevice.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Vulkan\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="PhysicalDevice.cpp">
+      <Filter>Source Files\Vulkan\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="GraphicsInstance.cpp">
+      <Filter>Source Files\Vulkan</Filter>
     </ClCompile>
     <ClCompile Include="Swapchain.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Vulkan\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture.cpp">
+      <Filter>Source Files\Vulkan\Rendering</Filter>
     </ClCompile>
     <ClCompile Include="Image.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Vulkan\Rendering</Filter>
     </ClCompile>
     <ClCompile Include="CommandPool.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Debug.cpp">
+      <Filter>Source Files\Debugging</Filter>
+    </ClCompile>
+    <ClCompile Include="HelloTriangleApp.cpp">
+      <Filter>Source Files\Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="Structures.cpp">
+      <Filter>Source Files\Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="Buffer.cpp">
+      <Filter>Source Files\Vulkan</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="HelloTriangleApp.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Structures.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GraphicsInstance.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Window.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Debug.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PhysicalDevice.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Vulkan\Window</Filter>
     </ClInclude>
     <ClInclude Include="Surface.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Vulkan\Window</Filter>
     </ClInclude>
     <ClInclude Include="LogicalDevice.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Vulkan\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="PhysicalDevice.h">
+      <Filter>Header Files\Vulkan\Device</Filter>
     </ClInclude>
     <ClInclude Include="Queues.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Vulkan\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="GraphicsInstance.h">
+      <Filter>Header Files\Vulkan</Filter>
     </ClInclude>
     <ClInclude Include="Swapchain.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Vulkan\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture.h">
+      <Filter>Header Files\Vulkan\Rendering</Filter>
     </ClInclude>
     <ClInclude Include="Image.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Vulkan\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Debug.h">
+      <Filter>Header Files\Debugging</Filter>
     </ClInclude>
     <ClInclude Include="CommandPool.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="HelloTriangleApp.h">
+      <Filter>Header Files\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="Structures.h">
+      <Filter>Header Files\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="Buffer.h">
+      <Filter>Header Files\Vulkan</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

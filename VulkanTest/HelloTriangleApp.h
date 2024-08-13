@@ -10,6 +10,8 @@ class PhysicalDevice;
 class LogicalDevice;
 class Swapchain;
 class CommandPool;
+class Texture;
+class Buffer;
 
 class HelloTriangleApp {
 public: //                         PUBLIC FUNCTIONS
@@ -31,15 +33,16 @@ private: //                         PRIVATE VARIABLES
     /// Responsible for temporary transfer command buffers
     /// </summary>
     std::unique_ptr<CommandPool> transferCommandPool;
-
     std::unique_ptr<CommandPool> commandPool;
+
     /// <summary>
     /// Buffer of commands to be executed, often cleared and written into
     /// </summary>
     std::vector<VkCommandBuffer> commandBuffers;
     
-
     std::unique_ptr<Swapchain> swapchain;
+
+    std::unique_ptr<Texture> texture;
 
     /// <summary>
     /// Render pass encapsulates the state needed for renderering to the target, for example: 
@@ -86,24 +89,15 @@ private: //                         PRIVATE VARIABLES
     std::vector<VkFence> inFlightFences;
 
     // can use same buffer for both indices and vertices
-    VkBuffer vertexBuffer;
-    VkDeviceMemory vertexBufferMemory;
-    
-    VkBuffer indexBuffer;
-    VkDeviceMemory indexBufferMemory;
-    
-    uint32_t mipLevels;
-    VkImage textureImage;
-    VkImageView textureImageView;
-    VkDeviceMemory textureImageMemory;
+    std::unique_ptr<Buffer> vertexBuffer;
+    std::unique_ptr<Buffer> indexBuffer;
 
     VkSampler textureSampler;
 
     VkDescriptorPool descriptorPool;
     std::vector<VkDescriptorSet> descriptorSets;
 
-    std::vector<VkBuffer> uniformBuffers;
-    std::vector<VkDeviceMemory> uniformBuffersMemory;
+    std::vector<std::unique_ptr<Buffer>> uniformBuffers;
     std::vector<void*> uniformBuffersMapped;
 
     // OBJ
@@ -155,8 +149,6 @@ private: //                         PRIVATE FUNCTIONS
     void createDescriptorSetLayout();
     void createGraphicsPipeline();
 
-    void createTextureImage();
-    void createTextureImageView();
     void createTextureSampler();
 
     // VkBuffer creation
@@ -173,12 +165,6 @@ private: //                         PRIVATE FUNCTIONS
     /// Calls all the relevant create functions
     /// </summary>
     void initVulkan();
-
-    void createBuffer(VkDeviceSize size, VkBufferUsageFlags flags, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
-    void copyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size) const;
-
-    void generateMipmaps(VkImage image, VkFormat format, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
-    void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
     /// <summary>
     /// If window has resized, calls cleanupSwapchain() then creates new swapchain with new window size
