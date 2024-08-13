@@ -1,5 +1,11 @@
 #pragma once
+#include "imgui.h"
+#include "imgui_impl_vulkan.h"
+
 #include <memory>
+#include <vector>
+#include <fstream>
+
 #include "Queues.h"
 #include "Structures.h"
 
@@ -12,6 +18,7 @@ class Swapchain;
 class CommandPool;
 class Texture;
 class Buffer;
+class Model;
 
 class HelloTriangleApp {
 public: //                         PUBLIC FUNCTIONS
@@ -72,7 +79,6 @@ private: //                         PRIVATE VARIABLES
     /// </summary>
     uint32_t currentFrame = 0;
 
-
     /// <summary>
     /// Semaphore to ensure image has been acquired fully before GPU renders to it
     /// </summary>
@@ -89,20 +95,14 @@ private: //                         PRIVATE VARIABLES
     std::vector<VkFence> inFlightFences;
 
     // can use same buffer for both indices and vertices
-    std::unique_ptr<Buffer> vertexBuffer;
-    std::unique_ptr<Buffer> indexBuffer;
-
     VkSampler textureSampler;
+    std::unique_ptr<Model> model;
 
     VkDescriptorPool descriptorPool;
     std::vector<VkDescriptorSet> descriptorSets;
 
     std::vector<std::unique_ptr<Buffer>> uniformBuffers;
     std::vector<void*> uniformBuffersMapped;
-
-    // OBJ
-    std::vector<Vertex> vertices;
-    std::vector<uint32_t> indices;
 
     // IMGUI
     VkDescriptorPool imguiDescriptorPool;
@@ -150,12 +150,6 @@ private: //                         PRIVATE FUNCTIONS
     void createGraphicsPipeline();
 
     void createTextureSampler();
-
-    // VkBuffer creation
-    void loadModel();
-    void createVertexBuffer();
-    void createIndexBuffer();
-    void createUniformBuffers();
 
     void createDescriptorPool();
     void createDescriptorSets();

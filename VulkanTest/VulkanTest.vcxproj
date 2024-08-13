@@ -152,8 +152,8 @@
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="LogicalDevice.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Model.cpp" />
     <ClCompile Include="PhysicalDevice.cpp" />
-    <ClCompile Include="Structures.cpp" />
     <ClCompile Include="Surface.cpp" />
     <ClCompile Include="Swapchain.cpp" />
     <ClCompile Include="Texture.cpp" />
@@ -167,6 +167,8 @@
     <ClInclude Include="HelloTriangleApp.h" />
     <ClInclude Include="Image.h" />
     <ClInclude Include="LogicalDevice.h" />
+    <ClInclude Include="Model.h" />
+    <ClInclude Include="ModelData.h" />
     <ClInclude Include="PhysicalDevice.h" />
     <ClInclude Include="Queues.h" />
     <ClInclude Include="Structures.h" />

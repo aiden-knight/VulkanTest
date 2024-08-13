@@ -1,4 +1,5 @@
 #include "HelloTriangleApp.h"
+
 #include "Window.h"
 #include "GraphicsInstance.h"
 #include "PhysicalDevice.h"
@@ -10,6 +11,9 @@
 #include "CommandPool.h"
 #include "Texture.h"
 #include "Buffer.h"
+#include "Model.h"
+
+#include "Debug.h"
 
 HelloTriangleApp::HelloTriangleApp() {
     window = std::make_unique<Window>();
@@ -124,15 +128,9 @@ void HelloTriangleApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32
     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-    const std::array<VkDeviceSize, 1> offsets = { 0 };
-    const std::array<VkBuffer, 1> buffers = { vertexBuffer->getBuffer() };
-    vkCmdBindVertexBuffers(commandBuffer, 0, static_cast<uint32_t>(buffers.size()), buffers.data(), offsets.data());
-    vkCmdBindIndexBuffer(commandBuffer, indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT32);
-
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
 
-    // Draw command for the triangle
-    vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0); 
+    model->draw(commandBuffer);
 
     // render the imgui
     ImGui::Render();
@@ -506,77 +504,6 @@ void HelloTriangleApp::createTextureSampler() {
     }
 }
 
-void HelloTriangleApp::loadModel() {
-    tinyobj::attrib_t attrib;
-    std::vector<tinyobj::shape_t> shapes;
-    std::vector<tinyobj::material_t> materials;
-    std::string warn, err;
-
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str())) {
-        throw std::runtime_error(warn + err);
-    }
-
-    std::unordered_map<Vertex, uint32_t> uniqueVertices{};
-
-    for (const auto& shape : shapes) {
-        for (const auto& index : shape.mesh.indices) {
-            Vertex vertex{};
-
-            vertex.pos = {
-                attrib.vertices[3 * index.vertex_index + 0],
-                attrib.vertices[3 * index.vertex_index + 1],
-                attrib.vertices[3 * index.vertex_index + 2]
-            };
-
-            vertex.texCoord = {
-                attrib.texcoords[2 * index.texcoord_index + 0],
-                1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
-            };
-
-            vertex.color = { 1.0f, 1.0f, 1.0f };
-
-            if (uniqueVertices.count(vertex) == 0) {
-                uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
-                vertices.push_back(vertex);
-            }
-
-            indices.push_back(uniqueVertices[vertex]);
-        }
-    }
-}
-
-void HelloTriangleApp::createVertexBuffer() {
-    VkDeviceSize size = sizeof(vertices[0]) * vertices.size();
-
-    auto stagingBuffer = std::make_unique<Buffer>(device, physicalDevice, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-    stagingBuffer->copyFromData(vertices.data());
-
-    vertexBuffer = std::make_unique<Buffer>(device, physicalDevice, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    vertexBuffer->copyFromBuffer(physicalDevice, commandPool, transferCommandPool, stagingBuffer);
-}
-
-void HelloTriangleApp::createIndexBuffer() {
-    VkDeviceSize size = sizeof(indices[0]) * indices.size();
-
-    auto stagingBuffer = std::make_unique<Buffer>(device, physicalDevice, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-    stagingBuffer->copyFromData(indices.data());
-
-    indexBuffer = std::make_unique<Buffer>(device, physicalDevice, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    indexBuffer->copyFromBuffer(physicalDevice, commandPool, transferCommandPool, stagingBuffer);
-}
-
-void HelloTriangleApp::createUniformBuffers() {
-    VkDeviceSize size = sizeof(UniformBufferObject);
-
-    uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-    uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        uniformBuffers[i] = std::make_unique<Buffer>(device, physicalDevice, size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-        uniformBuffers[i]->mapMemory(&uniformBuffersMapped[i]);
-    }
-}
-
 void HelloTriangleApp::createDescriptorPool() {
     std::array<VkDescriptorPoolSize,2> poolSizes{};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -711,10 +638,16 @@ void HelloTriangleApp::initVulkan() {
 
     createTextureSampler();
 
-    loadModel();
-    createVertexBuffer();
-    createIndexBuffer();
-    createUniformBuffers();
+    model = std::make_unique<Model>(device, physicalDevice, commandPool, transferCommandPool, MODEL_PATH);
+    
+    VkDeviceSize uniformBufferSize = sizeof(UniformBufferObject);
+    uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+    uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        uniformBuffers[i] = std::make_unique<Buffer>(device, physicalDevice, uniformBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+        uniformBuffers[i]->mapMemory(&uniformBuffersMapped[i]);
+    }
 
     createDescriptorPool();
     createDescriptorSets();
@@ -828,7 +761,7 @@ VkShaderModule HelloTriangleApp::createShaderModule(const std::vector<char>& cod
 void HelloTriangleApp::checkVkResult(VkResult err) {
     if (err == 0) return;
 
-    std::cout << "Vulkan Error: VkResult = " << err << std::endl;
+    Debug::log("Vulkan Error: VkResult = " + err);
 
     if (err < 0) abort();
 }
@@ -837,7 +770,7 @@ std::vector<char> HelloTriangleApp::readFile(const std::string& filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
     if (!file.is_open()) {
-        throw std::runtime_error("failed to open file");
+        Debug::exception("failed to open file");
     }
 
     size_t fileSize = (size_t)file.tellg();

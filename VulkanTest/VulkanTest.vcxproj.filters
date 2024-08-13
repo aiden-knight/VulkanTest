@@ -55,6 +55,12 @@
     <Filter Include="Source Files\Misc">
       <UniqueIdentifier>{65a2d263-dbc2-4b16-824b-15c35336848a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Vulkan\Model">
+      <UniqueIdentifier>{e91c8ece-1d1b-42ab-97c6-772761aaddf7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Vulkan\Model">
+      <UniqueIdentifier>{2add4080-acee-4524-b63f-d0a79507a86b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -117,11 +123,11 @@
     <ClCompile Include="HelloTriangleApp.cpp">
       <Filter>Source Files\Misc</Filter>
     </ClCompile>
-    <ClCompile Include="Structures.cpp">
-      <Filter>Source Files\Misc</Filter>
-    </ClCompile>
     <ClCompile Include="Buffer.cpp">
       <Filter>Source Files\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Model.cpp">
+      <Filter>Source Files\Vulkan\Model</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -166,6 +172,12 @@
     </ClInclude>
     <ClInclude Include="Buffer.h">
       <Filter>Header Files\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Model.h">
+      <Filter>Header Files\Vulkan\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelData.h">
+      <Filter>Header Files\Vulkan\Model</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
