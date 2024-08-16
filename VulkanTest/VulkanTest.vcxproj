@@ -136,20 +136,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\..\..\..\SDKs\imgui\backends\imgui_impl_glfw.cpp" />
-    <ClCompile Include="..\..\..\..\..\..\..\SDKs\imgui\backends\imgui_impl_vulkan.cpp" />
-    <ClCompile Include="..\..\..\..\..\..\..\SDKs\imgui\imgui.cpp" />
-    <ClCompile Include="..\..\..\..\..\..\..\SDKs\imgui\imgui_demo.cpp" />
-    <ClCompile Include="..\..\..\..\..\..\..\SDKs\imgui\imgui_draw.cpp" />
-    <ClCompile Include="..\..\..\..\..\..\..\SDKs\imgui\imgui_tables.cpp" />
-    <ClCompile Include="..\..\..\..\..\..\..\SDKs\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="..\..\..\..\..\..\..\SDKs\imgui\misc\cpp\imgui_stdlib.cpp" />
     <ClCompile Include="Buffer.cpp" />
     <ClCompile Include="CommandPool.cpp" />
     <ClCompile Include="Debug.cpp" />
     <ClCompile Include="GraphicsInstance.cpp" />
     <ClCompile Include="HelloTriangleApp.cpp" />
     <ClCompile Include="Image.cpp" />
+    <ClCompile Include="imgui\imgui.cpp" />
+    <ClCompile Include="imgui\imgui_demo.cpp" />
+    <ClCompile Include="imgui\imgui_draw.cpp" />
+    <ClCompile Include="imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="imgui\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="imgui\imgui_stdlib.cpp" />
+    <ClCompile Include="imgui\imgui_tables.cpp" />
+    <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="LogicalDevice.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Model.cpp" />
